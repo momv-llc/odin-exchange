@@ -7,10 +7,19 @@ export class RedisService implements OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   private readonly client: Redis;
 
-  constructor(config: ConfigService) {
-    this.client = new Redis({ host: config.get('REDIS_HOST'), port: config.get('REDIS_PORT') });
+  constructor(private readonly config: ConfigService) {
+    const isProduction = this.config.get('NODE_ENV') === 'production';
+    
+    this.client = new Redis({
+      host: this.config.get('REDIS_HOST', 'localhost'),
+      port: this.config.get('REDIS_PORT', 6379),
+      password: this.config.get('REDIS_PASSWORD') || undefined,
+      tls: isProduction ? {} : undefined, // Upstash требует TLS
+      maxRetriesPerRequest: 3,
+    });
+
     this.client.on('connect', () => this.logger.log('Redis connected'));
-    this.client.on('error', (e) => this.logger.error('Redis error', e));
+    this.client.on('error', (err) => this.logger.error('Redis error', err));
   }
 
   getClient() { return this.client; }
