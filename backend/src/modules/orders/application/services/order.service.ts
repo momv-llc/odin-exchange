@@ -36,14 +36,17 @@ export class OrderService {
         `Currency ${dto.fromCurrency} not found`,
       );
     }
+
     if (!to) {
       throw new BadRequestException(
         `Currency ${dto.toCurrency} not found`,
       );
     }
+
     if (dto.fromAmount < Number(from.minAmount)) {
       throw new BadRequestException(`Min: ${from.minAmount}`);
     }
+
     if (dto.fromAmount > Number(from.maxAmount)) {
       throw new BadRequestException(`Max: ${from.maxAmount}`);
     }
@@ -63,11 +66,12 @@ export class OrderService {
 
     const eff = Number(rate.effectiveRate);
 
-    // === КЛЮЧЕВАЯ ПРАВКА ===
+    // ====== ГАРАНТИРОВАННАЯ ИНИЦИАЛИЗАЦИЯ CODE ======
     let code: string | null = null;
 
     for (let i = 0; i < 5; i++) {
       const generated = this.codeGen.generate().code;
+
       const exists = await this.prisma.order.findUnique({
         where: { code: generated },
       });
@@ -83,7 +87,7 @@ export class OrderService {
         'Unable to generate unique order code',
       );
     }
-    // ======================
+    // =================================================
 
     const order = await this.prisma.order.create({
       data: {
@@ -124,7 +128,11 @@ export class OrderService {
       where: { code },
       include: { fromCurrency: true, toCurrency: true },
     });
-    if (!o) throw new NotFoundException('Not found');
+
+    if (!o) {
+      throw new NotFoundException('Not found');
+    }
+
     return OrderResponseDto.fromEntity(o);
   }
 
@@ -137,7 +145,11 @@ export class OrderService {
         statusHistory: { orderBy: { createdAt: 'asc' } },
       },
     });
-    if (!o) throw new NotFoundException('Not found');
+
+    if (!o) {
+      throw new NotFoundException('Not found');
+    }
+
     return OrderResponseDto.fromEntity(o, true);
   }
 
@@ -187,11 +199,18 @@ export class OrderService {
 
   async approve(id: string, adminId: string, notes?: string) {
     const o = await this.prisma.order.findUnique({ where: { id } });
-    if (!o) throw new NotFoundException('Not found');
-    if (o.status !== OrderStatus.PENDING)
+
+    if (!o) {
+      throw new NotFoundException('Not found');
+    }
+
+    if (o.status !== OrderStatus.PENDING) {
       throw new BadRequestException('Not pending');
-    if (new Date() > o.expiresAt)
+    }
+
+    if (new Date() > o.expiresAt) {
       throw new BadRequestException('Expired');
+    }
 
     const u = await this.prisma.order.update({
       where: { id },
@@ -222,9 +241,14 @@ export class OrderService {
 
   async reject(id: string, adminId: string, reason: string) {
     const o = await this.prisma.order.findUnique({ where: { id } });
-    if (!o) throw new NotFoundException('Not found');
-    if (o.status !== OrderStatus.PENDING)
+
+    if (!o) {
+      throw new NotFoundException('Not found');
+    }
+
+    if (o.status !== OrderStatus.PENDING) {
       throw new BadRequestException('Not pending');
+    }
 
     const u = await this.prisma.order.update({
       where: { id },
@@ -256,9 +280,14 @@ export class OrderService {
 
   async complete(id: string, adminId: string, notes?: string) {
     const o = await this.prisma.order.findUnique({ where: { id } });
-    if (!o) throw new NotFoundException('Not found');
-    if (o.status !== OrderStatus.APPROVED)
+
+    if (!o) {
+      throw new NotFoundException('Not found');
+    }
+
+    if (o.status !== OrderStatus.APPROVED) {
       throw new BadRequestException('Not approved');
+    }
 
     const u = await this.prisma.order.update({
       where: { id },
