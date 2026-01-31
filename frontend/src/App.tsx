@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { cn } from './utils/cn';
+import { translations, Language, TranslationKey } from './translations';
+import { generateReviews, ExchangeRequest } from './reviewsData';
 
 interface Currency {
   symbol: string;
@@ -19,6 +21,7 @@ const initialCurrencies: Currency[] = [
 ];
 
 export function App() {
+  const [currentLang, setCurrentLang] = useState<Language>('en');
   const [currencies, setCurrencies] = useState<Currency[]>(initialCurrencies);
   const [selectedFrom, setSelectedFrom] = useState<Currency>(initialCurrencies[2]);
   const [selectedTo, setSelectedTo] = useState<Currency>(initialCurrencies[0]);
@@ -28,6 +31,17 @@ export function App() {
   const [transactionHistory, setTransactionHistory] = useState<
     Array<{ id: number; from: string; to: string; amount: string; status: 'completed' | 'pending' }>
   >([]);
+  const [reviews] = useState(() => generateReviews());
+  const [guestMode, setGuestMode] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestWallet, setGuestWallet] = useState('');
+  const [exchangeRequests, setExchangeRequests] = useState<ExchangeRequest[]>([]);
+  const [currentRequest, setCurrentRequest] = useState<ExchangeRequest | null>(null);
+  const [trackingCode, setTrackingCode] = useState('');
+  const [trackedRequest, setTrackedRequest] = useState<ExchangeRequest | null>(null);
+  const [currentPage, setCurrentPage] = useState<'exchange' | 'reviews' | 'track'>('exchange');
+
+  const t = (key: TranslationKey) => translations[currentLang][key];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -86,6 +100,69 @@ export function App() {
     setAmountTo(tempAmount);
   };
 
+  const handleGuestExchange = () => {
+    if (!guestEmail || !guestWallet) {
+      alert(t('yourEmail') + ' and ' + t('walletAddress') + ' are required');
+      return;
+    }
+
+    const requestId = 'ODIN' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    const newRequest: ExchangeRequest = {
+      id: requestId,
+      email: guestEmail,
+      walletAddress: guestWallet,
+      fromCurrency: selectedFrom.symbol,
+      toCurrency: selectedTo.symbol,
+      amount: amountFrom,
+      status: 'waiting',
+      createdAt: new Date(),
+      emailSent: false,
+      telegramSent: false
+    };
+
+    setExchangeRequests(prev => [newRequest, ...prev]);
+    setCurrentRequest(newRequest);
+
+    // Simulate sending email and telegram
+    setTimeout(() => {
+      setExchangeRequests(prev => 
+        prev.map(req => 
+          req.id === requestId 
+            ? { ...req, emailSent: true, telegramSent: true, status: 'processing' as const }
+            : req
+        )
+      );
+    }, 2000);
+
+    // Simulate completion
+    setTimeout(() => {
+      setExchangeRequests(prev => 
+        prev.map(req => 
+          req.id === requestId 
+            ? { ...req, status: 'completed' as const }
+            : req
+        )
+      );
+    }, 10000);
+
+    setGuestEmail('');
+    setGuestWallet('');
+    setGuestMode(false);
+  };
+
+  const trackRequest = () => {
+    const request = exchangeRequests.find(req => req.id === trackingCode.toUpperCase());
+    setTrackedRequest(request || null);
+  };
+
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <span key={i} className={cn(i < rating ? 'text-yellow-400' : 'text-slate-600')}>
+        ★
+      </span>
+    ));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       <nav className="border-b border-slate-700/50 backdrop-blur-lg bg-slate-900/70 sticky top-0 z-50">
@@ -96,28 +173,47 @@ export function App() {
                 <span className="text-xl font-bold">Ø</span>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                Odineco Exchange
+                {t('siteName')}
               </span>
             </div>
 
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#exchange" className="text-slate-300 hover:text-emerald-400 transition-colors">
-                Exchange
-              </a>
-              <a href="#markets" className="text-slate-300 hover:text-emerald-400 transition-colors">
-                Markets
-              </a>
-              <a href="#history" className="text-slate-300 hover:text-emerald-400 transition-colors">
-                History
-              </a>
+              <button 
+                onClick={() => setCurrentPage('exchange')}
+                className={cn("text-slate-300 hover:text-emerald-400 transition-colors", currentPage === 'exchange' && 'text-emerald-400')}
+              >
+                {t('exchange')}
+              </button>
+              <button 
+                onClick={() => setCurrentPage('reviews')}
+                className={cn("text-slate-300 hover:text-emerald-400 transition-colors", currentPage === 'reviews' && 'text-emerald-400')}
+              >
+                {t('reviews')}
+              </button>
+              <button 
+                onClick={() => setCurrentPage('track')}
+                className={cn("text-slate-300 hover:text-emerald-400 transition-colors", currentPage === 'track' && 'text-emerald-400')}
+              >
+                {t('trackRequest')}
+              </button>
             </div>
 
             <div className="flex items-center space-x-4">
-              <button className="px-4 py-2 text-slate-300 hover:text-white transition-colors">
-                Log In
-              </button>
-              <button className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg font-medium hover:opacity-90 transition-opacity">
-                Sign Up
+              <select 
+                value={currentLang} 
+                onChange={(e) => setCurrentLang(e.target.value as Language)}
+                className="bg-slate-700/50 text-slate-300 px-3 py-2 rounded-lg border border-slate-600/50 focus:outline-none focus:border-emerald-400"
+              >
+                <option value="en">EN</option>
+                <option value="de">DE</option>
+                <option value="ru">RU</option>
+                <option value="ua">UA</option>
+              </select>
+              <button 
+                onClick={() => setGuestMode(!guestMode)}
+                className="px-4 py-2 text-slate-300 hover:text-white transition-colors"
+              >
+                {guestMode ? t('login') : t('guestExchange')}
               </button>
             </div>
           </div>
@@ -125,258 +221,83 @@ export function App() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
-              Buy & Sell Cryptocurrency
-            </span>
-          </h1>
-          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            Instant exchange with best rates. Secure, fast, and reliable.
-          </p>
-        </div>
+        {currentPage === 'exchange' && (
+          <>
+            <div className="text-center mb-12">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  {t('buySell')}
+                </span>
+              </h1>
+              <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                {t('tagline')}
+              </p>
+            </div>
 
-        <div id="exchange" className="max-w-2xl mx-auto mb-12">
-          <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl">
-            <div className="mb-6">
-              <label className="block text-slate-400 text-sm mb-2">You send</label>
-              <div className="bg-slate-700/50 rounded-2xl p-4 border border-slate-600/50">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => setSelectedFrom(selectedFrom)}
-                    className="flex items-center space-x-3 bg-slate-600/50 rounded-xl px-4 py-3 hover:bg-slate-600 transition-colors"
-                  >
-                    <span className="text-2xl">{selectedFrom.icon}</span>
-                    <div className="text-left">
-                      <div className="font-semibold">{selectedFrom.symbol}</div>
-                      <div className="text-xs text-slate-400">{selectedFrom.name}</div>
-                    </div>
-                    <svg
-                      className="w-4 h-4 text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
+            {guestMode && (
+              <div className="max-w-2xl mx-auto mb-8">
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl">
+                  <h3 className="text-xl font-semibold mb-6">{t('guestExchange')}</h3>
+                  <p className="text-slate-400 mb-6">{t('guestDesc')}</p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-slate-400 text-sm mb-2">{t('yourEmail')}</label>
+                      <input
+                        type="email"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        className="w-full bg-slate-700/50 rounded-xl px-4 py-3 border border-slate-600/50 focus:outline-none focus:border-emerald-400"
                       />
-                    </svg>
-                  </button>
-                  <input
-                    type="number"
-                    value={amountFrom}
-                    onChange={(e) => setAmountFrom(e.target.value)}
-                    placeholder="0.00"
-                    className="flex-1 bg-transparent text-right text-2xl font-semibold outline-none placeholder-slate-500"
-                  />
-                </div>
-                <div className="mt-2 text-right text-sm text-slate-400">
-                  ${(parseFloat(amountFrom || '0') * selectedFrom.price).toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-center -my-4 relative z-10">
-              <button
-                onClick={switchCurrencies}
-                className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-emerald-500/25"
-              >
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="mb-8 mt-4">
-              <label className="block text-slate-400 text-sm mb-2">You receive</label>
-              <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => setSelectedTo(selectedTo)}
-                    className="flex items-center space-x-3 bg-slate-600/30 rounded-xl px-4 py-3 hover:bg-slate-600/50 transition-colors"
-                  >
-                    <span className="text-2xl">{selectedTo.icon}</span>
-                    <div className="text-left">
-                      <div className="font-semibold">{selectedTo.symbol}</div>
-                      <div className="text-xs text-slate-400">{selectedTo.name}</div>
                     </div>
-                    <svg
-                      className="w-4 h-4 text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
+                    <div>
+                      <label className="block text-slate-400 text-sm mb-2">{t('walletAddress')}</label>
+                      <input
+                        type="text"
+                        value={guestWallet}
+                        onChange={(e) => setGuestWallet(e.target.value)}
+                        placeholder="Your wallet address"
+                        className="w-full bg-slate-700/50 rounded-xl px-4 py-3 border border-slate-600/50 focus:outline-none focus:border-emerald-400"
                       />
-                    </svg>
-                  </button>
-                  <input
-                    type="text"
-                    value={amountTo}
-                    readOnly
-                    placeholder="0.00"
-                    className="flex-1 bg-transparent text-right text-2xl font-semibold outline-none placeholder-slate-500 text-emerald-400"
-                  />
-                </div>
-                <div className="mt-2 text-right text-sm text-slate-400">
-                  ${(parseFloat(amountTo || '0') * selectedTo.price).toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-sm text-slate-400 mb-6">
-              <span>Exchange rate</span>
-              <span>
-                1 {selectedFrom.symbol} = {(selectedFrom.price / selectedTo.price).toFixed(6)} {selectedTo.symbol}
-              </span>
-            </div>
-
-            <button
-              onClick={handleSwap}
-              disabled={isSwapping || !amountFrom || parseFloat(amountFrom) <= 0}
-              className={cn(
-                'w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-200',
-                isSwapping || !amountFrom || parseFloat(amountFrom) <= 0
-                  ? 'bg-slate-600 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/25'
-              )}
-            >
-              {isSwapping ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Processing...</span>
-                </div>
-              ) : (
-                'Exchange Now'
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div id="markets" className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 flex items-center">
-            <span className="w-1 h-6 bg-gradient-to-b from-emerald-400 to-cyan-400 rounded-full mr-3"></span>
-            Live Markets
-          </h2>
-
-          <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-700/30">
-                  <tr>
-                    <th className="text-left py-4 px-6 text-slate-400 font-medium">Asset</th>
-                    <th className="text-right py-4 px-6 text-slate-400 font-medium">Price</th>
-                    <th className="text-right py-4 px-6 text-slate-400 font-medium">24h Change</th>
-                    <th className="text-right py-4 px-6 text-slate-400 font-medium">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-700/50">
-                  {currencies.map((currency) => (
-                    <tr
-                      key={currency.symbol}
-                      className="hover:bg-slate-700/30 transition-colors group"
+                    </div>
+                    <button
+                      onClick={handleGuestExchange}
+                      className="w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-medium hover:opacity-90 transition-opacity"
                     >
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-lg">
-                            {currency.icon}
-                          </div>
-                          <div>
-                            <div className="font-semibold">{currency.symbol}</div>
-                            <div className="text-sm text-slate-400">{currency.name}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-right font-mono">
-                        ${currency.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <span
-                          className={cn(
-                            'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',
-                            currency.change >= 0
-                              ? 'bg-emerald-500/10 text-emerald-400'
-                              : 'bg-red-500/10 text-red-400'
-                          )}
-                        >
-                          {currency.change >= 0 ? '+' : ''}
-                          {currency.change.toFixed(2)}%
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <button
-                          onClick={() => {
-                            setSelectedTo(currency);
-                            document.getElementById('exchange')?.scrollIntoView({ behavior: 'smooth' });
-                          }}
-                          className="px-4 py-2 bg-slate-700/50 rounded-lg text-sm font-medium hover:bg-emerald-500/20 hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          Trade
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div id="history" className="mb-12">
-          <h2 className="text-2xl font-bold mb-6 flex items-center">
-            <span className="w-1 h-6 bg-gradient-to-b from-emerald-400 to-cyan-400 rounded-full mr-3"></span>
-            Recent Transactions
-          </h2>
-
-          {transactionHistory.length === 0 ? (
-            <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-12 text-center">
-              <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-slate-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
-                </svg>
+                      {t('createRequest')}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-lg font-medium text-slate-300 mb-2">No transactions yet</h3>
-              <p className="text-slate-500">Your exchange history will appear here</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {transactionHistory.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-6"
-                >
-                  <div className="flex items-center justify-between">
+            )}
+
+            {currentRequest && (
+              <div className="max-w-2xl mx-auto mb-8">
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6">
+                  <h4 className="text-emerald-400 font-semibold mb-2">{t('requestCreated')}</h4>
+                  <p className="text-slate-300 mb-2">{t('requestCodeInfo')} <span className="font-mono bg-slate-700/50 px-2 py-1 rounded">{currentRequest.id}</span></p>
+                  <p className="text-slate-400 text-sm">{t('emailSent')}</p>
+                </div>
+              </div>
+            )}
+
+            <div id="exchange" className="max-w-2xl mx-auto mb-12">
+              <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl">
+                <div className="mb-6">
+                  <label className="block text-slate-400 text-sm mb-2">{t('youSend')}</label>
+                  <div className="bg-slate-700/50 rounded-2xl p-4 border border-slate-600/50">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center">
+                      <button
+                        onClick={() => setSelectedFrom(selectedFrom)}
+                        className="flex items-center space-x-3 bg-slate-600/50 rounded-xl px-4 py-3 hover:bg-slate-600 transition-colors"
+                      >
+                        <span className="text-2xl">{selectedFrom.icon}</span>
+                        <div className="text-left">
+                          <div className="font-semibold">{selectedFrom.symbol}</div>
+                          <div className="text-xs text-slate-400">{selectedFrom.name}</div>
+                        </div>
                         <svg
-                          className="w-6 h-6 text-emerald-400"
+                          className="w-4 h-4 text-slate-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -385,50 +306,400 @@ export function App() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                            d="M19 9l-7 7-7-7"
                           />
                         </svg>
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">{transaction.from}</span>
-                          <svg
-                            className="w-4 h-4 text-slate-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5l7 7-7 7"
-                            />
-                          </svg>
-                          <span className="font-medium text-emerald-400">{transaction.to}</span>
-                        </div>
-                        <div className="text-sm text-slate-400">{transaction.amount}</div>
-                      </div>
+                      </button>
+                      <input
+                        type="number"
+                        value={amountFrom}
+                        onChange={(e) => setAmountFrom(e.target.value)}
+                        placeholder="0.00"
+                        className="flex-1 bg-transparent text-right text-2xl font-semibold outline-none placeholder-slate-500"
+                      />
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <span
-                        className={cn(
-                          'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',
-                          transaction.status === 'completed'
-                            ? 'bg-emerald-500/10 text-emerald-400'
-                            : 'bg-yellow-500/10 text-yellow-400'
-                        )}
-                      >
-                        <span className="w-2 h-2 rounded-full mr-2 bg-current animate-pulse"></span>
-                        {transaction.status === 'completed' ? 'Completed' : 'Pending'}
-                      </span>
+                    <div className="mt-2 text-right text-sm text-slate-400">
+                      ${(parseFloat(amountFrom || '0') * selectedFrom.price).toFixed(2)}
                     </div>
                   </div>
                 </div>
+
+                <div className="flex justify-center -my-4 relative z-10">
+                  <button
+                    onClick={switchCurrencies}
+                    className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-emerald-500/25"
+                  >
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="mb-8 mt-4">
+                  <label className="block text-slate-400 text-sm mb-2">{t('youReceive')}</label>
+                  <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
+                    <div className="flex items-center space-x-4">
+                      <button
+                        onClick={() => setSelectedTo(selectedTo)}
+                        className="flex items-center space-x-3 bg-slate-600/30 rounded-xl px-4 py-3 hover:bg-slate-600/50 transition-colors"
+                      >
+                        <span className="text-2xl">{selectedTo.icon}</span>
+                        <div className="text-left">
+                          <div className="font-semibold">{selectedTo.symbol}</div>
+                          <div className="text-xs text-slate-400">{selectedTo.name}</div>
+                        </div>
+                        <svg
+                          className="w-4 h-4 text-slate-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      <input
+                        type="text"
+                        value={amountTo}
+                        readOnly
+                        placeholder="0.00"
+                        className="flex-1 bg-transparent text-right text-2xl font-semibold outline-none placeholder-slate-500 text-emerald-400"
+                      />
+                    </div>
+                    <div className="mt-2 text-right text-sm text-slate-400">
+                      ${(parseFloat(amountTo || '0') * selectedTo.price).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-sm text-slate-400 mb-6">
+                  <span>{t('exchangeRate')}</span>
+                  <span>
+                    1 {selectedFrom.symbol} = {(selectedFrom.price / selectedTo.price).toFixed(6)} {selectedTo.symbol}
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleSwap}
+                  disabled={isSwapping || !amountFrom || parseFloat(amountFrom) <= 0}
+                  className={cn(
+                    'w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-200',
+                    isSwapping || !amountFrom || parseFloat(amountFrom) <= 0
+                      ? 'bg-slate-600 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/25'
+                  )}
+                >
+                  {isSwapping ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>{t('processing')}</span>
+                    </div>
+                  ) : (
+                    t('exchangeNow')
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div id="markets" className="mb-12">
+              <h2 className="text-2xl font-bold mb-6 flex items-center">
+                <span className="w-1 h-6 bg-gradient-to-b from-emerald-400 to-cyan-400 rounded-full mr-3"></span>
+                {t('liveMarkets')}
+              </h2>
+
+              <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-700/30">
+                      <tr>
+                        <th className="text-left py-4 px-6 text-slate-400 font-medium">{t('asset')}</th>
+                        <th className="text-right py-4 px-6 text-slate-400 font-medium">{t('price')}</th>
+                        <th className="text-right py-4 px-6 text-slate-400 font-medium">{t('change24h')}</th>
+                        <th className="text-right py-4 px-6 text-slate-400 font-medium">{t('action')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-700/50">
+                      {currencies.map((currency) => (
+                        <tr
+                          key={currency.symbol}
+                          className="hover:bg-slate-700/30 transition-colors group"
+                        >
+                          <td className="py-4 px-6">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-lg">
+                                {currency.icon}
+                              </div>
+                              <div>
+                                <div className="font-semibold">{currency.symbol}</div>
+                                <div className="text-sm text-slate-400">{currency.name}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-right font-mono">
+                            ${currency.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <span
+                              className={cn(
+                                'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',
+                                currency.change >= 0
+                                  ? 'bg-emerald-500/10 text-emerald-400'
+                                  : 'bg-red-500/10 text-red-400'
+                              )}
+                            >
+                              {currency.change >= 0 ? '+' : ''}
+                              {currency.change.toFixed(2)}%
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <button
+                              onClick={() => {
+                                setSelectedTo(currency);
+                                document.getElementById('exchange')?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="px-4 py-2 bg-slate-700/50 rounded-lg text-sm font-medium hover:bg-emerald-500/20 hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              {t('trade')}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div id="history" className="mb-12">
+              <h2 className="text-2xl font-bold mb-6 flex items-center">
+                <span className="w-1 h-6 bg-gradient-to-b from-emerald-400 to-cyan-400 rounded-full mr-3"></span>
+                {t('recentTransactions')}
+              </h2>
+
+              {transactionHistory.length === 0 ? (
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-12 text-center">
+                  <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg
+                      className="w-8 h-8 text-slate-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-300 mb-2">{t('noTransactions')}</h3>
+                  <p className="text-slate-500">{t('noTransactionsDesc')}</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {transactionHistory.map((transaction) => (
+                    <div
+                      key={transaction.id}
+                      className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-6"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center">
+                            <svg
+                              className="w-6 h-6 text-emerald-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{transaction.from}</span>
+                              <svg
+                                className="w-4 h-4 text-slate-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
+                              <span className="font-medium text-emerald-400">{transaction.to}</span>
+                            </div>
+                            <div className="text-sm text-slate-400">{transaction.amount}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <span
+                            className={cn(
+                              'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',
+                              transaction.status === 'completed'
+                                ? 'bg-emerald-500/10 text-emerald-400'
+                                : 'bg-yellow-500/10 text-yellow-400'
+                            )}
+                          >
+                            <span className="w-2 h-2 rounded-full mr-2 bg-current animate-pulse"></span>
+                            {transaction.status === 'completed' ? t('completedStatus') : t('pendingStatus')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {currentPage === 'reviews' && (
+          <div>
+            <div className="text-center mb-12">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  {t('reviewsTitle')}
+                </span>
+              </h1>
+              <div className="flex justify-center space-x-8 mt-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-emerald-400">{reviews.length}</div>
+                  <div className="text-slate-400">{t('totalReviews')}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-emerald-400">{Math.round(reviews.filter(r => r.isPositive).length / reviews.length * 100)}%</div>
+                  <div className="text-slate-400">{t('positiveReviews')}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-yellow-400">{Math.round(reviews.filter(r => !r.isPositive).length / reviews.length * 100)}%</div>
+                  <div className="text-slate-400">{t('neutralReviews')}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
+              {reviews.slice(0, 50).map((review) => (
+                <div key={review.id} className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="font-semibold text-white">{review.userName}</div>
+                      <div className="text-sm text-slate-400">{review.date}</div>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      {renderStars(review.rating)}
+                    </div>
+                  </div>
+                  <p className={cn(
+                    "text-sm",
+                    review.isPositive ? "text-slate-300" : "text-slate-400"
+                  )}>
+                    {review.comment}
+                  </p>
+                </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {currentPage === 'track' && (
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-12">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  {t('trackRequest')}
+                </span>
+              </h1>
+            </div>
+
+            <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl mb-8">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-slate-400 text-sm mb-2">{t('requestCode')}</label>
+                  <input
+                    type="text"
+                    value={trackingCode}
+                    onChange={(e) => setTrackingCode(e.target.value)}
+                    placeholder="ODINXXXXXXX"
+                    className="w-full bg-slate-700/50 rounded-xl px-4 py-3 border border-slate-600/50 focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <button
+                  onClick={trackRequest}
+                  className="w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-medium hover:opacity-90 transition-opacity"
+                >
+                  {t('checkStatus')}
+                </button>
+              </div>
+            </div>
+
+            {trackedRequest && (
+              <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50">
+                <h3 className="text-xl font-semibold mb-6">{t('status')}: {trackedRequest.id}</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">{t('status')}:</span>
+                    <span className={cn(
+                      'px-3 py-1 rounded-full text-sm font-medium',
+                      trackedRequest.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
+                      trackedRequest.status === 'processing' ? 'bg-yellow-500/10 text-yellow-400' :
+                      trackedRequest.status === 'waiting' ? 'bg-blue-500/10 text-blue-400' :
+                      'bg-red-500/10 text-red-400'
+                    )}>
+                      {trackedRequest.status === 'completed' ? t('completedStatus') :
+                       trackedRequest.status === 'processing' ? t('processingStatus') :
+                       trackedRequest.status === 'waiting' ? t('waiting') :
+                       t('expiredStatus')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Email:</span>
+                    <span>{trackedRequest.email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">{t('exchange')}:</span>
+                    <span>{trackedRequest.amount} {trackedRequest.fromCurrency} → {trackedRequest.toCurrency}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Email sent:</span>
+                    <span className={trackedRequest.emailSent ? 'text-emerald-400' : 'text-slate-400'}>
+                      {trackedRequest.emailSent ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Telegram sent:</span>
+                    <span className={trackedRequest.telegramSent ? 'text-emerald-400' : 'text-slate-400'}>
+                      {trackedRequest.telegramSent ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-2xl border border-emerald-500/20 p-6">
@@ -447,8 +718,8 @@ export function App() {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Secure & Private</h3>
-            <p className="text-slate-400 text-sm">Your transactions are protected by advanced encryption and security protocols.</p>
+            <h3 className="text-lg font-semibold mb-2">{t('securePrivate')}</h3>
+            <p className="text-slate-400 text-sm">{t('secureDesc')}</p>
           </div>
 
           <div className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-2xl border border-emerald-500/20 p-6">
@@ -467,8 +738,8 @@ export function App() {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Instant Exchange</h3>
-            <p className="text-slate-400 text-sm">Fast transactions with minimal delays. Get your crypto in minutes.</p>
+            <h3 className="text-lg font-semibold mb-2">{t('instantExchange')}</h3>
+            <p className="text-slate-400 text-sm">{t('instantDesc')}</p>
           </div>
 
           <div className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-2xl border border-emerald-500/20 p-6">
@@ -487,8 +758,8 @@ export function App() {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Best Rates</h3>
-            <p className="text-slate-400 text-sm">Competitive exchange rates with no hidden fees. What you see is what you get.</p>
+            <h3 className="text-lg font-semibold mb-2">{t('bestRatesService')}</h3>
+            <p className="text-slate-400 text-sm">{t('bestDesc')}</p>
           </div>
         </div>
       </main>
@@ -501,10 +772,10 @@ export function App() {
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-xl flex items-center justify-center">
                   <span className="text-xl font-bold">Ø</span>
                 </div>
-                <span className="text-xl font-bold">Odineco Exchange</span>
+                <span className="text-xl font-bold">{t('siteName')}</span>
               </div>
               <p className="text-slate-400 mb-6 max-w-md">
-                The most reliable and user-friendly cryptocurrency exchange platform. Trade with confidence.
+                {t('reliablePlatform')}
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center hover:bg-emerald-500/20 transition-colors">
@@ -526,28 +797,28 @@ export function App() {
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Products</h4>
+              <h4 className="font-semibold mb-4">{t('products')}</h4>
               <ul className="space-y-3 text-slate-400">
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">Exchange</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">Markets</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">Wallet</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">API</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('exchange')}</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('markets')}</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('wallet')}</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('api')}</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
+              <h4 className="font-semibold mb-4">{t('support')}</h4>
               <ul className="space-y-3 text-slate-400">
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">Fees</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">API Documentation</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">Contact Us</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('helpCenter')}</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('fees')}</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('apiDocumentation')}</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('contactUs')}</a></li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-slate-700/50 mt-12 pt-8 text-center text-slate-500 text-sm">
-            <p>© 2024 Odineco Exchange. All rights reserved.</p>
+            <p>{t('allRights')}</p>
           </div>
         </div>
       </footer>
