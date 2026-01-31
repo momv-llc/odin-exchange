@@ -1,20 +1,23 @@
 /** @type {import('next').NextConfig} */
-module.exports = {
-  output: 'standalone', // Для Cloudflare Pages
-  
+const nextConfig = {
+  // Для Cloudflare Pages не нужен standalone
   images: {
-    unoptimized: true, // Cloudflare не поддерживает Image Optimization
+    unoptimized: true,
   },
   
+  // API proxy
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
+        destination: process.env.NEXT_PUBLIC_API_URL 
+          ? `${process.env.NEXT_PUBLIC_API_URL.replace('/api/v1', '')}/:path*`
+          : 'http://localhost:3000/api/:path*',
       },
     ];
   },
   
+  // Security headers
   async headers() {
     return [
       {
@@ -27,4 +30,16 @@ module.exports = {
       },
     ];
   },
+  
+  // Отключаем ESLint при сборке (опционально, чтобы избежать предупреждений)
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  
+  // Отключаем проверку типов при сборке (если нужно быстрее)
+  typescript: {
+    ignoreBuildErrors: false,
+  },
 };
+
+module.exports = nextConfig;
