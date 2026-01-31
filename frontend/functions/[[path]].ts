@@ -1,4 +1,5 @@
 // frontend/functions/[[path]].ts
-export const onRequest: PagesFunction = async (context) => {
+// Простой passthrough для Next.js
+export async function onRequest(context: { next: () => Promise<Response> }) {
   return context.next();
-};
+}
