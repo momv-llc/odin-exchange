@@ -1,0 +1,75 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AdminLayout } from './components/Layout';
+import { LoginPage } from './pages/Login';
+import { DashboardPage } from './pages/Dashboard';
+import { OrdersPage } from './pages/Orders';
+import { UsersPage } from './pages/Users';
+import { ReviewsPage } from './pages/Reviews';
+import { PromoPage } from './pages/Promo';
+
+function AdminRoutes() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/admin" replace /> : <LoginPage />}
+      />
+      <Route
+        path="/"
+        element={
+          <AdminLayout>
+            <DashboardPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/orders"
+        element={
+          <AdminLayout>
+            <OrdersPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <AdminLayout>
+            <UsersPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/reviews"
+        element={
+          <AdminLayout>
+            <ReviewsPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/promo"
+        element={
+          <AdminLayout>
+            <PromoPage />
+          </AdminLayout>
+        }
+      />
+      <Route path="*" element={<Navigate to="/admin" replace />} />
+    </Routes>
+  );
+}
+
+export function AdminApp() {
+  return (
+    <AuthProvider>
+      <AdminRoutes />
+    </AuthProvider>
+  );
+}
