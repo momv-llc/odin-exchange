@@ -14,6 +14,12 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HealthModule } from './health/health.module';
+import { UserAuthModule } from './modules/user-auth/user-auth.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { UsersAdminModule } from './modules/users-admin/users-admin.module';
+import { PromoModule } from './modules/promo/promo.module';
+import { TelegramModule } from './modules/telegram/telegram.module';
+import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -31,7 +37,8 @@ import { HealthModule } from './health/health.module';
       useFactory: (c: ConfigService) => ({ redis: { host: c.get('REDIS_HOST'), port: c.get('REDIS_PORT') } }),
     }),
     PrismaModule, RedisModule, OrdersModule, CurrenciesModule, ExchangeRatesModule,
-    AuthModule, AdminModule, AuditModule, NotificationsModule, HealthModule,
+    AuthModule, AdminModule, AuditModule, NotificationsModule, HealthModule, UserAuthModule, ReviewsModule,
+    UsersAdminModule, PromoModule, TelegramModule, WhatsAppModule,
   ],
 })
 export class AppModule {}
