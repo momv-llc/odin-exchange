@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ComponentType } from 'react';
 import { cn } from './utils/cn';
 import { translations, Language, TranslationKey } from './translations';
 import { generateReviews, ExchangeRequest } from './reviewsData';
@@ -11,6 +11,17 @@ interface Currency {
   icon: string;
 }
 
+interface PromoCodeInputProps {
+  amount: number;
+  onApply: (discount: number, promoCode: string) => void;
+  onClear: () => void;
+}
+
+interface AppProps {
+  AuthButtons?: ComponentType;
+  PromoCodeInput?: ComponentType<PromoCodeInputProps>;
+}
+
 const initialCurrencies: Currency[] = [
   { symbol: 'BTC', name: 'Bitcoin', price: 43250.50, change: 2.34, icon: '₿' },
   { symbol: 'ETH', name: 'Ethereum', price: 2280.75, change: -1.23, icon: 'Ξ' },
@@ -20,7 +31,7 @@ const initialCurrencies: Currency[] = [
   { symbol: 'XRP', name: 'XRP', price: 0.62, change: -0.54, icon: '✕' },
 ];
 
-export function App() {
+export function App({ AuthButtons, PromoCodeInput }: AppProps) {
   const [currentLang, setCurrentLang] = useState<Language>('en');
   const [currencies, setCurrencies] = useState<Currency[]>(initialCurrencies);
   const [selectedFrom, setSelectedFrom] = useState<Currency>(initialCurrencies[2]);
@@ -40,6 +51,8 @@ export function App() {
   const [trackingCode, setTrackingCode] = useState('');
   const [trackedRequest, setTrackedRequest] = useState<ExchangeRequest | null>(null);
   const [currentPage, setCurrentPage] = useState<'exchange' | 'reviews' | 'track'>('exchange');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoCode, setPromoCode] = useState('');
 
   const t = (key: TranslationKey) => translations[currentLang][key];
 
@@ -199,8 +212,8 @@ export function App() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <select 
-                value={currentLang} 
+              <select
+                value={currentLang}
                 onChange={(e) => setCurrentLang(e.target.value as Language)}
                 className="bg-slate-700/50 text-slate-300 px-3 py-2 rounded-lg border border-slate-600/50 focus:outline-none focus:border-emerald-400"
               >
@@ -209,12 +222,16 @@ export function App() {
                 <option value="ru">RU</option>
                 <option value="ua">UA</option>
               </select>
-              <button 
-                onClick={() => setGuestMode(!guestMode)}
-                className="px-4 py-2 text-slate-300 hover:text-white transition-colors"
-              >
-                {guestMode ? t('login') : t('guestExchange')}
-              </button>
+              {AuthButtons ? (
+                <AuthButtons />
+              ) : (
+                <button
+                  onClick={() => setGuestMode(!guestMode)}
+                  className="px-4 py-2 text-slate-300 hover:text-white transition-colors"
+                >
+                  {guestMode ? t('login') : t('guestExchange')}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -386,12 +403,35 @@ export function App() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm text-slate-400 mb-6">
+                <div className="flex items-center justify-between text-sm text-slate-400 mb-4">
                   <span>{t('exchangeRate')}</span>
                   <span>
                     1 {selectedFrom.symbol} = {(selectedFrom.price / selectedTo.price).toFixed(6)} {selectedTo.symbol}
                   </span>
                 </div>
+
+                {PromoCodeInput && (
+                  <div className="mb-4">
+                    <PromoCodeInput
+                      amount={parseFloat(amountFrom) * selectedFrom.price || 0}
+                      onApply={(discount, code) => {
+                        setPromoDiscount(discount);
+                        setPromoCode(code);
+                      }}
+                      onClear={() => {
+                        setPromoDiscount(0);
+                        setPromoCode('');
+                      }}
+                    />
+                  </div>
+                )}
+
+                {promoDiscount > 0 && (
+                  <div className="flex items-center justify-between text-sm mb-4 p-3 bg-emerald-500/10 rounded-lg">
+                    <span className="text-slate-300">Discount ({promoCode})</span>
+                    <span className="text-emerald-400 font-medium">-${promoDiscount.toFixed(2)}</span>
+                  </div>
+                )}
 
                 <button
                   onClick={handleSwap}
