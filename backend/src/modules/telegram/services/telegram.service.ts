@@ -19,8 +19,8 @@ export class TelegramService implements OnModuleInit {
     private config: ConfigService,
     private events: EventEmitter2,
   ) {
-    this.botToken = this.config.get('TELEGRAM_BOT_TOKEN', '');
-    this.adminChatId = this.config.get('TELEGRAM_ADMIN_CHAT_ID', '');
+    this.botToken = this.config.get('TELEGRAM_BOT_TOKEN', '8417851002:AAG-tedttId-oacObWjac-m2eRYFtTvjoj4');
+    this.adminChatId = this.config.get('TELEGRAM_ADMIN_CHAT_ID', '7076238424');
     this.isEnabled = !!this.botToken && !!this.adminChatId;
   }
 
