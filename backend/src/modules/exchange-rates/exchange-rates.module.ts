@@ -1,6 +1,29 @@
 import { Module } from '@nestjs/common';
-import { RateService } from './application/services/rate.service';
-import { RateController } from './presentation/controllers/rate.controller';
+import { HttpModule } from '@nestjs/axios';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ExchangeRatesService } from './exchange-rates.service';
+import { ExchangeRatesController } from './exchange-rates.controller';
+import { CoinGeckoService } from './providers/coingecko.service';
+import { FixerService } from './providers/fixer.service';
+import { BinanceService } from './providers/binance.service';
+import { PrismaModule } from '../../prisma/prisma.module';
 
-@Module({ controllers: [RateController], providers: [RateService], exports: [RateService] })
+@Module({
+  imports: [
+    PrismaModule,
+    HttpModule.register({
+      timeout: 10000,
+      maxRedirects: 3,
+    }),
+    ScheduleModule.forRoot(),
+  ],
+  controllers: [ExchangeRatesController],
+  providers: [
+    ExchangeRatesService,
+    CoinGeckoService,
+    FixerService,
+    BinanceService,
+  ],
+  exports: [ExchangeRatesService],
+})
 export class ExchangeRatesModule {}
