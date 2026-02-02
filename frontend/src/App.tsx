@@ -2,6 +2,11 @@ import { useState, useEffect, ComponentType } from 'react';
 import { cn } from './utils/cn';
 import { translations, Language, TranslationKey } from './translations';
 import { generateReviews, ExchangeRequest } from './reviewsData';
+import { CurrencyTicker } from './components/CurrencyTicker';
+import { LocationsSection } from './components/LocationsSection';
+import { PaymentMethodsSection } from './components/PaymentMethodsSection';
+import { TransfersSection } from './components/TransfersSection';
+import { SupportChat } from './components/SupportChat';
 
 interface Currency {
   symbol: string;
@@ -236,6 +241,9 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
           </div>
         </div>
       </nav>
+
+      {/* Currency Ticker */}
+      <CurrencyTicker />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {currentPage === 'exchange' && (
@@ -614,6 +622,15 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                 </div>
               )}
             </div>
+
+            {/* Payment Methods Section */}
+            <PaymentMethodsSection lang={currentLang} />
+
+            {/* Locations Section */}
+            <LocationsSection lang={currentLang} />
+
+            {/* Money Transfers Section */}
+            <TransfersSection lang={currentLang} />
           </>
         )}
 
@@ -862,6 +879,9 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
           </div>
         </div>
       </footer>
+
+      {/* Support Chat Widget */}
+      <SupportChat lang={currentLang} />
     </div>
   );
 }
