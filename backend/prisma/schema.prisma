@@ -215,16 +215,27 @@ model User {
   telegramId     String?    @map("telegram_id") @db.VarChar(100)
   whatsappPhone  String?    @map("whatsapp_phone") @db.VarChar(50)
   preferredLang  String     @default("en") @map("preferred_lang") @db.VarChar(5)
+  referralCode   String?    @unique @map("referral_code") @db.VarChar(20)
+  referredBy     String?    @map("referred_by") @db.Uuid
+  kycLevel       KycLevel   @default(NONE) @map("kyc_level")
   lastLoginAt    DateTime?  @map("last_login_at")
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
 
-  sessions  UserSession[]
-  reviews   Review[]
-  orders    Order[]       @relation("UserOrders")
+  sessions          UserSession[]
+  reviews           Review[]
+  orders            Order[]            @relation("UserOrders")
+  payments          Payment[]
+  kyc               KycVerification?
+  referralsGiven    Referral[]         @relation("Referrer")
+  referralReceived  Referral?          @relation("Referred")
+  referralRewards   ReferralReward[]
+  analytics         UserAnalytics?
+  pushSubscriptions PushSubscription[]
 
   @@index([email])
   @@index([telegramId])
+  @@index([referralCode])
   @@map("users")
 }
 
@@ -523,4 +534,451 @@ model ExchangePair {
   @@unique([fromCurrency, toCurrency])
   @@index([isActive])
   @@map("exchange_pairs")
+}
+
+// ==================== REAL-TIME EXCHANGE RATES ====================
+
+enum RateSource {
+  COINGECKO
+  BINANCE
+  FIXER
+  OPENEXCHANGERATES
+  MANUAL
+}
+
+model LiveExchangeRate {
+  id            String     @id @default(uuid()) @db.Uuid
+  baseCurrency  String     @map("base_currency") @db.VarChar(10)
+  quoteCurrency String     @map("quote_currency") @db.VarChar(10)
+  rate          Decimal    @db.Decimal(20, 8)
+  source        RateSource
+  change24h     Decimal?   @map("change_24h") @db.Decimal(10, 4)
+  high24h       Decimal?   @map("high_24h") @db.Decimal(20, 8)
+  low24h        Decimal?   @map("low_24h") @db.Decimal(20, 8)
+  volume24h     Decimal?   @map("volume_24h") @db.Decimal(30, 8)
+  marketCap     Decimal?   @map("market_cap") @db.Decimal(30, 2)
+  lastUpdated   DateTime   @map("last_updated")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  @@unique([baseCurrency, quoteCurrency, source])
+  @@index([baseCurrency])
+  @@index([lastUpdated])
+  @@map("live_exchange_rates")
+}
+
+model RateHistory {
+  id            String   @id @default(uuid()) @db.Uuid
+  baseCurrency  String   @map("base_currency") @db.VarChar(10)
+  quoteCurrency String   @map("quote_currency") @db.VarChar(10)
+  rate          Decimal  @db.Decimal(20, 8)
+  open          Decimal? @db.Decimal(20, 8)
+  high          Decimal? @db.Decimal(20, 8)
+  low           Decimal? @db.Decimal(20, 8)
+  close         Decimal? @db.Decimal(20, 8)
+  volume        Decimal? @db.Decimal(30, 8)
+  timestamp     DateTime
+  interval      String   @db.VarChar(10) // 1m, 5m, 1h, 1d
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@unique([baseCurrency, quoteCurrency, timestamp, interval])
+  @@index([baseCurrency, quoteCurrency, timestamp])
+  @@map("rate_history")
+}
+
+// ==================== PAYMENT GATEWAYS ====================
+
+enum PaymentGateway {
+  STRIPE
+  PAYPAL
+  COINBASE
+  BINANCE_PAY
+  CRYPTO_DIRECT
+  MANUAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+  EXPIRED
+}
+
+model Payment {
+  id               String         @id @default(uuid()) @db.Uuid
+  code             String         @unique @db.VarChar(30)
+  userId           String?        @map("user_id") @db.Uuid
+  orderId          String?        @map("order_id") @db.Uuid
+  gateway          PaymentGateway
+  externalId       String?        @map("external_id") @db.VarChar(255)
+  amount           Decimal        @db.Decimal(20, 8)
+  currency         String         @db.VarChar(10)
+  feeAmount        Decimal        @default(0) @map("fee_amount") @db.Decimal(20, 8)
+  netAmount        Decimal        @map("net_amount") @db.Decimal(20, 8)
+  status           PaymentStatus  @default(PENDING)
+  paymentMethod    String?        @map("payment_method") @db.VarChar(50)
+  customerEmail    String?        @map("customer_email") @db.VarChar(255)
+  billingAddress   Json?          @map("billing_address")
+  metadata         Json?
+  webhookData      Json?          @map("webhook_data")
+  errorMessage     String?        @map("error_message") @db.Text
+  paidAt           DateTime?      @map("paid_at")
+  expiresAt        DateTime?      @map("expires_at")
+  refundedAt       DateTime?      @map("refunded_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  user    User?    @relation(fields: [userId], references: [id])
+  refunds Refund[]
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([externalId])
+  @@index([status, createdAt])
+  @@index([gateway, status])
+  @@map("payments")
+}
+
+model Refund {
+  id            String        @id @default(uuid()) @db.Uuid
+  paymentId     String        @map("payment_id") @db.Uuid
+  externalId    String?       @map("external_id") @db.VarChar(255)
+  amount        Decimal       @db.Decimal(20, 8)
+  reason        String?       @db.Text
+  status        PaymentStatus @default(PENDING)
+  processedBy   String?       @map("processed_by") @db.Uuid
+  processedAt   DateTime?     @map("processed_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@map("refunds")
+}
+
+model CryptoWallet {
+  id           String   @id @default(uuid()) @db.Uuid
+  currency     String   @db.VarChar(10)
+  network      String   @db.VarChar(50)
+  address      String   @unique @db.VarChar(255)
+  label        String?  @db.VarChar(100)
+  isHot        Boolean  @default(true) @map("is_hot")
+  balance      Decimal  @default(0) @db.Decimal(30, 8)
+  lastSyncedAt DateTime? @map("last_synced_at")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  transactions CryptoTransaction[]
+
+  @@index([currency, network])
+  @@map("crypto_wallets")
+}
+
+enum CryptoTxType {
+  DEPOSIT
+  WITHDRAWAL
+  INTERNAL
+}
+
+enum CryptoTxStatus {
+  PENDING
+  CONFIRMING
+  CONFIRMED
+  FAILED
+}
+
+model CryptoTransaction {
+  id            String          @id @default(uuid()) @db.Uuid
+  walletId      String          @map("wallet_id") @db.Uuid
+  userId        String?         @map("user_id") @db.Uuid
+  txHash        String?         @map("tx_hash") @db.VarChar(255)
+  type          CryptoTxType
+  amount        Decimal         @db.Decimal(30, 8)
+  fee           Decimal         @default(0) @db.Decimal(30, 8)
+  fromAddress   String?         @map("from_address") @db.VarChar(255)
+  toAddress     String          @map("to_address") @db.VarChar(255)
+  confirmations Int             @default(0)
+  requiredConfs Int             @default(3) @map("required_confs")
+  status        CryptoTxStatus  @default(PENDING)
+  blockNumber   BigInt?         @map("block_number")
+  metadata      Json?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  wallet CryptoWallet @relation(fields: [walletId], references: [id])
+
+  @@index([txHash])
+  @@index([userId])
+  @@index([status])
+  @@map("crypto_transactions")
+}
+
+// ==================== KYC VERIFICATION ====================
+
+enum KycStatus {
+  NOT_STARTED
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum KycLevel {
+  NONE
+  BASIC
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum DocumentType {
+  PASSPORT
+  ID_CARD
+  DRIVERS_LICENSE
+  RESIDENCE_PERMIT
+  UTILITY_BILL
+  BANK_STATEMENT
+  SELFIE
+}
+
+model KycVerification {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @unique @map("user_id") @db.Uuid
+  level            KycLevel  @default(NONE)
+  status           KycStatus @default(NOT_STARTED)
+  firstName        String?   @map("first_name") @db.VarChar(100)
+  lastName         String?   @map("last_name") @db.VarChar(100)
+  middleName       String?   @map("middle_name") @db.VarChar(100)
+  dateOfBirth      DateTime? @map("date_of_birth") @db.Date
+  nationality      String?   @db.VarChar(3)
+  countryOfResidence String? @map("country_of_residence") @db.VarChar(3)
+  address          String?   @db.Text
+  city             String?   @db.VarChar(100)
+  postalCode       String?   @map("postal_code") @db.VarChar(20)
+  phoneVerified    Boolean   @default(false) @map("phone_verified")
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  documentVerified Boolean   @default(false) @map("document_verified")
+  addressVerified  Boolean   @default(false) @map("address_verified")
+  selfieVerified   Boolean   @default(false) @map("selfie_verified")
+  riskScore        Int?      @map("risk_score")
+  amlCheckPassed   Boolean?  @map("aml_check_passed")
+  sanctionsCheck   Boolean?  @map("sanctions_check")
+  pepCheck         Boolean?  @map("pep_check")
+  externalId       String?   @map("external_id") @db.VarChar(255)
+  provider         String?   @db.VarChar(50)
+  reviewedBy       String?   @map("reviewed_by") @db.Uuid
+  reviewedAt       DateTime? @map("reviewed_at")
+  rejectionReason  String?   @map("rejection_reason") @db.Text
+  expiresAt        DateTime? @map("expires_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  user      User          @relation(fields: [userId], references: [id])
+  documents KycDocument[]
+
+  @@index([status])
+  @@index([level])
+  @@map("kyc_verifications")
+}
+
+model KycDocument {
+  id             String       @id @default(uuid()) @db.Uuid
+  kycId          String       @map("kyc_id") @db.Uuid
+  type           DocumentType
+  fileName       String       @map("file_name") @db.VarChar(255)
+  fileUrl        String       @map("file_url") @db.Text
+  fileSize       Int          @map("file_size")
+  mimeType       String       @map("mime_type") @db.VarChar(100)
+  documentNumber String?      @map("document_number") @db.VarChar(100)
+  issuedBy       String?      @map("issued_by") @db.VarChar(100)
+  issuedDate     DateTime?    @map("issued_date") @db.Date
+  expiryDate     DateTime?    @map("expiry_date") @db.Date
+  isVerified     Boolean      @default(false) @map("is_verified")
+  verificationData Json?      @map("verification_data")
+  rejectionReason String?     @map("rejection_reason") @db.Text
+  uploadedAt     DateTime     @default(now()) @map("uploaded_at")
+
+  kyc KycVerification @relation(fields: [kycId], references: [id], onDelete: Cascade)
+
+  @@index([kycId, type])
+  @@map("kyc_documents")
+}
+
+// ==================== REFERRAL SYSTEM ====================
+
+model Referral {
+  id              String    @id @default(uuid()) @db.Uuid
+  referrerId      String    @map("referrer_id") @db.Uuid
+  referredId      String    @unique @map("referred_id") @db.Uuid
+  code            String    @db.VarChar(20)
+  status          String    @default("pending") @db.VarChar(20)
+  rewardPaid      Boolean   @default(false) @map("reward_paid")
+  referrerReward  Decimal?  @map("referrer_reward") @db.Decimal(20, 8)
+  referredBonus   Decimal?  @map("referred_bonus") @db.Decimal(20, 8)
+  conversionDate  DateTime? @map("conversion_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id])
+  referred User @relation("Referred", fields: [referredId], references: [id])
+
+  @@index([referrerId])
+  @@index([code])
+  @@map("referrals")
+}
+
+model ReferralReward {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  referralId    String   @map("referral_id") @db.Uuid
+  orderId       String?  @map("order_id") @db.Uuid
+  rewardType    String   @map("reward_type") @db.VarChar(50)
+  amount        Decimal  @db.Decimal(20, 8)
+  currency      String   @db.VarChar(10)
+  percentage    Decimal? @db.Decimal(5, 2)
+  status        String   @default("pending") @db.VarChar(20)
+  paidAt        DateTime? @map("paid_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([referralId])
+  @@map("referral_rewards")
+}
+
+model ReferralSettings {
+  id                     String   @id @default(uuid()) @db.Uuid
+  tierName               String   @map("tier_name") @db.VarChar(50)
+  minReferrals           Int      @default(0) @map("min_referrals")
+  referrerRewardPercent  Decimal  @map("referrer_reward_percent") @db.Decimal(5, 2)
+  referredBonusPercent   Decimal  @map("referred_bonus_percent") @db.Decimal(5, 2)
+  lifetimeCommission     Boolean  @default(false) @map("lifetime_commission")
+  commissionDurationDays Int?     @map("commission_duration_days")
+  isActive               Boolean  @default(true) @map("is_active")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@map("referral_settings")
+}
+
+// ==================== ANALYTICS ====================
+
+model AnalyticsEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  sessionId   String?  @map("session_id") @db.VarChar(100)
+  eventType   String   @map("event_type") @db.VarChar(50)
+  eventName   String   @map("event_name") @db.VarChar(100)
+  eventData   Json?    @map("event_data")
+  page        String?  @db.VarChar(255)
+  referrer    String?  @db.VarChar(255)
+  utmSource   String?  @map("utm_source") @db.VarChar(100)
+  utmMedium   String?  @map("utm_medium") @db.VarChar(100)
+  utmCampaign String?  @map("utm_campaign") @db.VarChar(100)
+  deviceType  String?  @map("device_type") @db.VarChar(20)
+  browser     String?  @db.VarChar(50)
+  os          String?  @db.VarChar(50)
+  country     String?  @db.VarChar(3)
+  city        String?  @db.VarChar(100)
+  ipAddress   String?  @map("ip_address") @db.Inet
+  userAgent   String?  @map("user_agent") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([eventType, eventName])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+model DailyStats {
+  id                String   @id @default(uuid()) @db.Uuid
+  date              DateTime @db.Date
+  totalOrders       Int      @default(0) @map("total_orders")
+  completedOrders   Int      @default(0) @map("completed_orders")
+  cancelledOrders   Int      @default(0) @map("cancelled_orders")
+  totalVolume       Decimal  @default(0) @map("total_volume") @db.Decimal(30, 8)
+  totalFees         Decimal  @default(0) @map("total_fees") @db.Decimal(30, 8)
+  newUsers          Int      @default(0) @map("new_users")
+  activeUsers       Int      @default(0) @map("active_users")
+  newReferrals      Int      @default(0) @map("new_referrals")
+  referralPayouts   Decimal  @default(0) @map("referral_payouts") @db.Decimal(30, 8)
+  uniqueVisitors    Int      @default(0) @map("unique_visitors")
+  pageViews         Int      @default(0) @map("page_views")
+  avgOrderValue     Decimal  @default(0) @map("avg_order_value") @db.Decimal(20, 8)
+  conversionRate    Decimal  @default(0) @map("conversion_rate") @db.Decimal(5, 4)
+  topCurrencyPair   String?  @map("top_currency_pair") @db.VarChar(20)
+  topCountry        String?  @map("top_country") @db.VarChar(3)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([date])
+  @@index([date])
+  @@map("daily_stats")
+}
+
+model UserAnalytics {
+  id                 String    @id @default(uuid()) @db.Uuid
+  userId             String    @unique @map("user_id") @db.Uuid
+  totalOrders        Int       @default(0) @map("total_orders")
+  completedOrders    Int       @default(0) @map("completed_orders")
+  totalVolume        Decimal   @default(0) @map("total_volume") @db.Decimal(30, 8)
+  totalFeesPaid      Decimal   @default(0) @map("total_fees_paid") @db.Decimal(30, 8)
+  referralEarnings   Decimal   @default(0) @map("referral_earnings") @db.Decimal(30, 8)
+  referralCount      Int       @default(0) @map("referral_count")
+  avgOrderValue      Decimal   @default(0) @map("avg_order_value") @db.Decimal(20, 8)
+  lastOrderAt        DateTime? @map("last_order_at")
+  firstOrderAt       DateTime? @map("first_order_at")
+  favoritePair       String?   @map("favorite_pair") @db.VarChar(20)
+  lifetimeValue      Decimal   @default(0) @map("lifetime_value") @db.Decimal(30, 8)
+  riskScore          Int       @default(0) @map("risk_score")
+  segment            String?   @db.VarChar(50)
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_analytics")
+}
+
+// ==================== PUSH NOTIFICATIONS ====================
+
+model PushSubscription {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  endpoint     String   @unique @db.Text
+  p256dh       String   @db.Text
+  auth         String   @db.VarChar(255)
+  userAgent    String?  @map("user_agent") @db.Text
+  deviceType   String?  @map("device_type") @db.VarChar(20)
+  isActive     Boolean  @default(true) @map("is_active")
+  lastUsedAt   DateTime? @map("last_used_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model PushNotification {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  title       String   @db.VarChar(255)
+  body        String   @db.Text
+  icon        String?  @db.VarChar(255)
+  image       String?  @db.VarChar(255)
+  url         String?  @db.VarChar(255)
+  data        Json?
+  sentCount   Int      @default(0) @map("sent_count")
+  failedCount Int      @default(0) @map("failed_count")
+  clickedCount Int     @default(0) @map("clicked_count")
+  scheduledAt DateTime? @map("scheduled_at")
+  sentAt      DateTime? @map("sent_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([scheduledAt])
+  @@map("push_notifications")
 }
