@@ -10,15 +10,21 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  MapPin,
+  CreditCard,
+  Send,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const menuItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/orders', icon: ShoppingCart, label: 'Orders', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
+  { path: '/admin/transfers', icon: Send, label: 'Transfers', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/users', icon: Users, label: 'Users', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/reviews', icon: MessageSquare, label: 'Reviews', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/promo', icon: Tag, label: 'Promo Codes', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { path: '/admin/locations', icon: MapPin, label: 'Locations', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { path: '/admin/payment-methods', icon: CreditCard, label: 'Payment Methods', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/admin/settings', icon: Settings, label: 'Settings', roles: ['SUPER_ADMIN'] },
 ];
 

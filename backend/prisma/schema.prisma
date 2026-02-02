@@ -372,3 +372,155 @@ model NotificationLog {
   @@index([channel, status])
   @@map("notification_logs")
 }
+
+// ==================== LOCATIONS ====================
+
+model Country {
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String   @unique @db.VarChar(3)
+  nameEn     String   @map("name_en") @db.VarChar(100)
+  nameRu     String?  @map("name_ru") @db.VarChar(100)
+  nameUa     String?  @map("name_ua") @db.VarChar(100)
+  nameDe     String?  @map("name_de") @db.VarChar(100)
+  flagEmoji  String?  @map("flag_emoji") @db.VarChar(10)
+  phoneCode  String?  @map("phone_code") @db.VarChar(10)
+  currency   String?  @db.VarChar(10)
+  timezone   String?  @db.VarChar(50)
+  sortOrder  Int      @default(0) @map("sort_order")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  cities         City[]
+  paymentMethods PaymentMethod[]
+
+  @@index([isActive, sortOrder])
+  @@map("countries")
+}
+
+model City {
+  id          String   @id @default(uuid()) @db.Uuid
+  countryId   String   @map("country_id") @db.Uuid
+  nameEn      String   @map("name_en") @db.VarChar(100)
+  nameRu      String?  @map("name_ru") @db.VarChar(100)
+  nameUa      String?  @map("name_ua") @db.VarChar(100)
+  nameDe      String?  @map("name_de") @db.VarChar(100)
+  latitude    Decimal? @db.Decimal(10, 8)
+  longitude   Decimal? @db.Decimal(11, 8)
+  population  Int?
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  isFeatured  Boolean  @default(false) @map("is_featured")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  country        Country         @relation(fields: [countryId], references: [id])
+  paymentMethods PaymentMethod[]
+  transfers      MoneyTransfer[]
+
+  @@index([countryId, isActive])
+  @@index([isFeatured])
+  @@map("cities")
+}
+
+// ==================== PAYMENT METHODS ====================
+
+enum PaymentMethodType {
+  CASH
+  CARD
+  BANK_TRANSFER
+  CRYPTO_WALLET
+  MOBILE_PAYMENT
+}
+
+model PaymentMethod {
+  id             String            @id @default(uuid()) @db.Uuid
+  type           PaymentMethodType
+  nameEn         String            @map("name_en") @db.VarChar(100)
+  nameRu         String?           @map("name_ru") @db.VarChar(100)
+  nameUa         String?           @map("name_ua") @db.VarChar(100)
+  nameDe         String?           @map("name_de") @db.VarChar(100)
+  descriptionEn  String?           @map("description_en") @db.Text
+  descriptionRu  String?           @map("description_ru") @db.Text
+  icon           String?           @db.VarChar(100)
+  countryId      String?           @map("country_id") @db.Uuid
+  cityId         String?           @map("city_id") @db.Uuid
+  minAmount      Decimal?          @map("min_amount") @db.Decimal(20, 2)
+  maxAmount      Decimal?          @map("max_amount") @db.Decimal(20, 2)
+  feePercent     Decimal           @default(0) @map("fee_percent") @db.Decimal(5, 2)
+  feeFixed       Decimal           @default(0) @map("fee_fixed") @db.Decimal(20, 2)
+  processingTime String?           @map("processing_time") @db.VarChar(100)
+  instructions   String?           @db.Text
+  sortOrder      Int               @default(0) @map("sort_order")
+  isActive       Boolean           @default(true) @map("is_active")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  country   Country? @relation(fields: [countryId], references: [id])
+  city      City?    @relation(fields: [cityId], references: [id])
+
+  @@index([type, isActive])
+  @@index([countryId])
+  @@index([cityId])
+  @@map("payment_methods")
+}
+
+// ==================== MONEY TRANSFERS ====================
+
+enum TransferStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+model MoneyTransfer {
+  id              String         @id @default(uuid()) @db.Uuid
+  code            String         @unique @db.VarChar(20)
+  userId          String?        @map("user_id") @db.Uuid
+  senderName      String         @map("sender_name") @db.VarChar(200)
+  senderPhone     String         @map("sender_phone") @db.VarChar(50)
+  senderEmail     String?        @map("sender_email") @db.VarChar(255)
+  recipientName   String         @map("recipient_name") @db.VarChar(200)
+  recipientPhone  String         @map("recipient_phone") @db.VarChar(50)
+  recipientCityId String         @map("recipient_city_id") @db.Uuid
+  amount          Decimal        @db.Decimal(20, 2)
+  currency        String         @db.VarChar(10)
+  fee             Decimal        @db.Decimal(20, 2)
+  totalAmount     Decimal        @map("total_amount") @db.Decimal(20, 2)
+  status          TransferStatus @default(PENDING)
+  notes           String?        @db.Text
+  adminNotes      String?        @map("admin_notes") @db.Text
+  processedBy     String?        @map("processed_by") @db.Uuid
+  completedAt     DateTime?      @map("completed_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  recipientCity City @relation(fields: [recipientCityId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([senderPhone])
+  @@index([recipientPhone])
+  @@map("money_transfers")
+}
+
+// ==================== EXCHANGE PAIRS (for admin) ====================
+
+model ExchangePair {
+  id            String   @id @default(uuid()) @db.Uuid
+  fromCurrency  String   @map("from_currency") @db.VarChar(10)
+  toCurrency    String   @map("to_currency") @db.VarChar(10)
+  spreadBuy     Decimal  @map("spread_buy") @db.Decimal(5, 2)
+  spreadSell    Decimal  @map("spread_sell") @db.Decimal(5, 2)
+  minAmount     Decimal  @map("min_amount") @db.Decimal(20, 8)
+  maxAmount     Decimal  @map("max_amount") @db.Decimal(20, 8)
+  isActive      Boolean  @default(true) @map("is_active")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([fromCurrency, toCurrency])
+  @@index([isActive])
+  @@map("exchange_pairs")
+}

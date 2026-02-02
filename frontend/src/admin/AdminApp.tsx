@@ -7,6 +7,9 @@ import { OrdersPage } from './pages/Orders';
 import { UsersPage } from './pages/Users';
 import { ReviewsPage } from './pages/Reviews';
 import { PromoPage } from './pages/Promo';
+import { Locations as LocationsPage } from './pages/Locations';
+import { PaymentMethods as PaymentMethodsPage } from './pages/PaymentMethods';
+import { Transfers as TransfersPage } from './pages/Transfers';
 
 function AdminRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -58,6 +61,30 @@ function AdminRoutes() {
         element={
           <AdminLayout>
             <PromoPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/locations"
+        element={
+          <AdminLayout>
+            <LocationsPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/payment-methods"
+        element={
+          <AdminLayout>
+            <PaymentMethodsPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/transfers"
+        element={
+          <AdminLayout>
+            <TransfersPage />
           </AdminLayout>
         }
       />

@@ -20,6 +20,9 @@ import { UsersAdminModule } from './modules/users-admin/users-admin.module';
 import { PromoModule } from './modules/promo/promo.module';
 import { TelegramModule } from './modules/telegram/telegram.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
+import { LocationsModule } from './modules/locations/locations.module';
+import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { TransfersModule } from './modules/transfers/transfers.module';
 
 @Module({
   imports: [
@@ -38,7 +41,7 @@ import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
     }),
     PrismaModule, RedisModule, OrdersModule, CurrenciesModule, ExchangeRatesModule,
     AuthModule, AdminModule, AuditModule, NotificationsModule, HealthModule, UserAuthModule, ReviewsModule,
-    UsersAdminModule, PromoModule, TelegramModule, WhatsAppModule,
+    UsersAdminModule, PromoModule, TelegramModule, WhatsAppModule, LocationsModule, PaymentMethodsModule, TransfersModule,
   ],
 })
 export class AppModule {}
