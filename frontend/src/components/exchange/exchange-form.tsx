@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api/client';
 
 const schema = z.object({
@@ -45,7 +45,7 @@ const defaultCurrencies: Currency[] = [
 ];
 
 export function ExchangeForm() {
-  const router = useRouter();
+  const navigate = useNavigate();
   
   const [currencies, setCurrencies] = useState<Currency[]>(defaultCurrencies);
   const [fromCurrency, setFromCurrency] = useState('BTC');
@@ -143,7 +143,7 @@ export function ExchangeForm() {
 
       const orderCode = response.data.data?.code;
       if (orderCode) {
-        router.push(`/track/${orderCode}`);
+        navigate(`/track/${orderCode}`);
       } else {
         setSubmitError('Order created but no code received');
       }
