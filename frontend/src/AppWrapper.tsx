@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { UserAuthProvider, useUserAuth, AuthModal, ProfileModal, PromoCodeInput } from './auth';
 import { App as MainApp } from './App';
+import { ABTestingProvider, useABTesting, ABAnalytics } from './abTesting';
 
 function AuthButtons() {
   const { user, isAuthenticated, isLoading } = useUserAuth();
@@ -63,14 +64,41 @@ function AuthButtons() {
 }
 
 function AppWithAuth() {
+  const { experiments } = useABTesting();
+
+  // Track page view with A/B experiment context
+  useState(() => {
+    ABAnalytics.trackPageView('main', experiments);
+  });
+
   return <MainApp AuthButtons={AuthButtons} PromoCodeInput={PromoCodeInput} />;
 }
 
+// Handler for A/B conversion events - can be connected to analytics service
+const handleABConversion = (
+  experimentId: string,
+  variant: string,
+  eventName: string,
+  metadata?: Record<string, unknown>
+) => {
+  // In production, send to analytics service (GA, Mixpanel, Amplitude, etc.)
+  console.log('[Analytics] A/B Conversion:', { experimentId, variant, eventName, metadata });
+
+  // Example: Send to backend API
+  // fetch('/api/analytics/ab-conversion', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({ experimentId, variant, eventName, metadata, timestamp: new Date() })
+  // });
+};
+
 export function AppWrapper() {
   return (
-    <UserAuthProvider>
-      <AppWithAuth />
-    </UserAuthProvider>
+    <ABTestingProvider onConversion={handleABConversion}>
+      <UserAuthProvider>
+        <AppWithAuth />
+      </UserAuthProvider>
+    </ABTestingProvider>
   );
 }
 
