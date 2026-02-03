@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 // API Configuration
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true' || !import.meta.env.VITE_API_URL;
@@ -111,6 +112,13 @@ let demoOrders = generateDemoOrders();
 let demoUsers = generateDemoUsers();
 let demoReviews = generateDemoReviews();
 let demoPromos = generateDemoPromos();
+=======
+const API_BASE = import.meta.env.VITE_API_URL;
+if (!API_BASE) {
+  throw new Error('VITE_API_URL is not defined');
+}
+
+>>>>>>> Stashed changes
 
 interface RequestOptions {
   method?: string;

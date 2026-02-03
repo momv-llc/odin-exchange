@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true' || !import.meta.env.VITE_API_URL;
 
@@ -6,6 +7,13 @@ const DEMO_USERS: Record<string, { id: string; email: string; password: string; 
 
 // Generate demo user ID
 const generateUserId = () => `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+=======
+const API_BASE = import.meta.env.VITE_API_URL;
+if (!API_BASE) {
+  throw new Error('VITE_API_URL is not defined');
+}
+
+>>>>>>> Stashed changes
 
 interface RequestOptions {
   method?: string;

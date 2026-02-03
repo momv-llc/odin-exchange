@@ -48,6 +48,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: odin-api
+    volumes:
+      - ./uploads:/app/uploads
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
@@ -75,10 +77,10 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
-      start_period: 30s
+      start_period: 40s
       retries: 3
     restart: unless-stopped
 
@@ -88,6 +90,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: odin-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: https://api.odineco.online/api/v1
     ports:
       - "${FRONTEND_PORT:-3001}:3000"
     depends_on:

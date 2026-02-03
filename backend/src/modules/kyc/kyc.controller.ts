@@ -13,6 +13,7 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
 } from '@nestjs/common';
+import { Multer } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { KycService, SubmitKycDto, UploadDocumentDto } from './kyc.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';

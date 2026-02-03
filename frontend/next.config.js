@@ -20,7 +20,7 @@ module.exports = nextConfig;
         source: '/api/:path*',
         destination: process.env.NEXT_PUBLIC_API_URL 
           ? `${process.env.NEXT_PUBLIC_API_URL.replace('/api/v1', '')}/:path*`
-          : 'http://localhost:3000/api/:path*',
+          : 'http://api.odineco.online/api/:path*',
       },
     ];
   },
