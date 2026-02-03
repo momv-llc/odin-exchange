@@ -1,9 +1,18 @@
-import { useState } from 'react';
-import { UserAuthProvider, useUserAuth, AuthModal, ProfileModal, PromoCodeInput } from './auth';
-import { App as MainApp } from './App';
+import { ReactNode, useEffect, useState } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { UserAuthProvider, useUserAuth, AuthModal, ProfileModal } from './auth';
 import { ABTestingProvider, useABTesting, ABAnalytics } from './abTesting';
+import { Home } from './pages/Home';
+import { Reviews } from './pages/Reviews';
+import { TrackRequest } from './pages/TrackRequest';
+import { KycVerification } from './pages/KycVerification';
+import { ReferralProgram } from './pages/ReferralProgram';
+import { Account } from './pages/Account';
+import { Footer } from './components/Footer';
+import { Navbar } from './components/Navbar';
+import { Language } from './translations';
 
-function AuthButtons() {
+function AuthButtons({ onAuthSuccess }: { onAuthSuccess: () => void }) {
   const { user, isAuthenticated, isLoading } = useUserAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -58,6 +67,7 @@ function AuthButtons() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         initialMode={authMode}
+        onSuccess={onAuthSuccess}
       />
     </>
   );
@@ -67,11 +77,91 @@ function AppWithAuth() {
   const { experiments } = useABTesting();
 
   // Track page view with A/B experiment context
-  useState(() => {
+  useEffect(() => {
     ABAnalytics.trackPageView('main', experiments);
-  });
+  }, [experiments]);
 
-  return <MainApp AuthButtons={AuthButtons} PromoCodeInput={PromoCodeInput} />;
+  const [currentLang, setCurrentLang] = useState<Language>('en');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleAuthSuccess = () => {
+    const state = location.state as { from?: string } | null;
+    if (state?.from) {
+      navigate(state.from, { replace: true });
+      return;
+    }
+    navigate('/account');
+  };
+
+  const AuthButtonsComponent = () => <AuthButtons onAuthSuccess={handleAuthSuccess} />;
+
+  const pageProps = {
+    currentLang,
+    setCurrentLang,
+    AuthButtons: AuthButtonsComponent,
+  };
+
+  const PageFrame = ({ children }: { children: ReactNode }) => (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <Navbar currentLang={currentLang} setCurrentLang={setCurrentLang} AuthButtons={AuthButtonsComponent} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">{children}</main>
+      <Footer />
+    </div>
+  );
+
+  const ProtectedRoute = ({ children }: { children: ReactNode }) => {
+    const { isAuthenticated, isLoading } = useUserAuth();
+
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+      );
+    }
+
+    if (!isAuthenticated) {
+      return <Navigate to="/" replace state={{ from: location.pathname }} />;
+    }
+
+    return <>{children}</>;
+  };
+
+  return (
+    <Routes>
+      <Route path="/" element={<Home {...pageProps} />} />
+      <Route path="/reviews" element={<Reviews {...pageProps} />} />
+      <Route path="/track" element={<TrackRequest {...pageProps} />} />
+      <Route
+        path="/kyc"
+        element={
+          <PageFrame>
+            <KycVerification />
+          </PageFrame>
+        }
+      />
+      <Route
+        path="/referrals"
+        element={
+          <PageFrame>
+            <ReferralProgram />
+          </PageFrame>
+        }
+      />
+      <Route
+        path="/account"
+        element={
+          <ProtectedRoute>
+            <PageFrame>
+              <Account />
+            </PageFrame>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 // Handler for A/B conversion events - can be connected to analytics service

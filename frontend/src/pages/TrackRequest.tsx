@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ComponentType, useState } from 'react';
 import { Language } from '../translations';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
@@ -22,9 +22,10 @@ interface ExchangeRequest {
 interface TrackRequestProps {
   currentLang: Language;
   setCurrentLang: (lang: Language) => void;
+  AuthButtons?: ComponentType;
 }
 
-export function TrackRequest({ currentLang, setCurrentLang }: TrackRequestProps) {
+export function TrackRequest({ currentLang, setCurrentLang, AuthButtons }: TrackRequestProps) {
   const [trackingCode, setTrackingCode] = useState('');
   const [trackedRequest, setTrackedRequest] = useState<ExchangeRequest | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,7 +140,7 @@ export function TrackRequest({ currentLang, setCurrentLang }: TrackRequestProps)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <Navbar currentLang={currentLang} setCurrentLang={setCurrentLang} />
+      <Navbar currentLang={currentLang} setCurrentLang={setCurrentLang} AuthButtons={AuthButtons} />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
