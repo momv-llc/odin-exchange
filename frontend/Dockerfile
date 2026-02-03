@@ -15,11 +15,9 @@ RUN npm list autoprefixer 2>/dev/null || npm install -D autoprefixer postcss 2>/
 COPY . .
 
 # Build аргументы
-ARG NEXT_PUBLIC_API_URL
+ARG VITE_API_URL
 
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV VITE_API_URL=${NEXT_PUBLIC_API_URL}
-
+ENV VITE_API_URL=${VITE_API_URL}
 
 # Собираем проект
 RUN npm run build
