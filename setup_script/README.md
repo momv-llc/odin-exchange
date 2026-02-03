@@ -8,7 +8,7 @@
 
 - ✅ **Автоматическая установка** всех зависимостей (Docker, Nginx, Certbot, etc.)
 - ✅ **Клонирование репозитория** из GitHub
-- ✅ **Docker-контейнеризация** всех сервисов (API, Frontend, PostgreSQL, Redis)
+- ✅ **Docker-контейнеризация** всех сервисов (API, Frontend, PostgreSQL, Redis, MailHog)
 - ✅ **SSL сертификаты** от Let's Encrypt
 - ✅ **Автообновление** из GitHub каждые 5 минут
 - ✅ **Firewall и Fail2ban** для безопасности
@@ -28,9 +28,9 @@
 
 1. **Загрузите скрипт на сервер:**
 ```bash
-wget https://raw.githubusercontent.com/momv-llc/odin-exchange/main/install.sh
+wget https://raw.githubusercontent.com/momv-llc/odin-exchange/main/setup_script/install.sh
 # или
-curl -O https://raw.githubusercontent.com/momv-llc/odin-exchange/main/install.sh
+curl -O https://raw.githubusercontent.com/momv-llc/odin-exchange/main/setup_script/install.sh
 ```
 
 2. **Откройте и настройте параметры:**
@@ -43,8 +43,7 @@ nano install.sh
 GITHUB_REPO="https://github.com/momv-llc/odin-exchange.git"
 DOMAIN_FRONTEND="exchange.odineco.online"
 DOMAIN_API="api.odineco.online"
-ADMIN_EMAIL="admin@odin.exchange"
-ADMIN_PASSWORD="admin123456"
+CERTBOT_EMAIL="admin@odineco.online"
 ```
 
 3. **Запустите установку:**
@@ -66,9 +65,10 @@ sudo ./install.sh
 
 ### Docker контейнеры
 - **odin-api** - NestJS API (порт 3000)
-- **odin-frontend** - Next.js Frontend (порт 3001)
+- **odin-frontend** - Vite (React) Frontend + Nginx (порт 3001)
 - **odin-postgres** - PostgreSQL 16
 - **odin-redis** - Redis 7
+- **odin-mailhog** - MailHog (SMTP 1025, Web UI 8025)
 
 ### Скрипты управления
 - `odin-status` - Показать статус сервисов
@@ -140,7 +140,7 @@ docker compose exec api npx prisma db seed
 docker compose exec api npx prisma studio
 
 # PostgreSQL Shell
-docker compose exec postgres psql -U odin_user -d odin_exchange
+docker compose exec postgres psql -U postgres -d odin_exchange
 ```
 
 ## 🔄 Автоматическая синхронизация с GitHub
@@ -166,8 +166,8 @@ tail -f /var/log/odin-update.log
 
 1. **Настройте Git:**
 ```bash
-chmod +x setup-git.sh
-sudo ./setup-git.sh
+chmod +x setup_script/setup-git.sh
+sudo ./setup_script/setup-git.sh
 ```
 
 2. **Используйте команду:**
@@ -182,7 +182,6 @@ odin-sync "Описание изменений"
 - **Frontend:** https://exchange.odineco.online
 - **API:** https://api.odineco.online
 - **Health Check:** https://api.odineco.online/health
-- **API Docs:** https://api.odineco.online/api/v1/docs
 
 ## 🔐 Учётные данные
 
@@ -193,8 +192,7 @@ cat /root/odin-credentials.txt
 
 Содержит:
 - URLs
-- Логин/пароль админа
-- Пароли БД, Redis, JWT секреты
+- Пароли БД и JWT секреты
 - Команды управления
 
 ## 🛡️ Безопасность
@@ -223,7 +221,7 @@ curl https://api.odineco.online/health
 
 ### Курсы валют
 ```bash
-curl https://api.odineco.online/api/v1/rates
+curl https://api.odineco.online/api/exchange-rates
 ```
 
 ### Использование ресурсов
@@ -245,7 +243,7 @@ htop
 │   ├── prisma/           # Database schema
 │   ├── Dockerfile
 │   └── package.json
-├── frontend/             # Next.js Frontend
+├── frontend/             # Vite (React) Frontend
 │   ├── src/
 │   ├── public/
 │   ├── Dockerfile
@@ -281,7 +279,7 @@ certbot --nginx -d api.odineco.online --force-renew
 ### База данных не доступна
 ```bash
 # Проверить PostgreSQL
-docker compose exec postgres pg_isready -U odin_user
+docker compose exec postgres pg_isready -U postgres
 
 # Перезапустить БД
 docker compose restart postgres
