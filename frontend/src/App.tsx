@@ -7,6 +7,9 @@ import { LocationsSection } from './components/LocationsSection';
 import { PaymentMethodsSection } from './components/PaymentMethodsSection';
 import { TransfersSection } from './components/TransfersSection';
 import { SupportChat } from './components/SupportChat';
+import { ScrollToTop } from './components/ScrollToTop';
+import { CurrencySelector } from './components/CurrencySelector';
+import { LocationSelector } from './components/LocationSelector';
 
 interface Currency {
   symbol: string;
@@ -31,9 +34,17 @@ const initialCurrencies: Currency[] = [
   { symbol: 'BTC', name: 'Bitcoin', price: 43250.50, change: 2.34, icon: '₿' },
   { symbol: 'ETH', name: 'Ethereum', price: 2280.75, change: -1.23, icon: 'Ξ' },
   { symbol: 'USDT', name: 'Tether', price: 1.00, change: 0.01, icon: '₮' },
+  { symbol: 'USDC', name: 'USD Coin', price: 1.00, change: 0.00, icon: '$' },
   { symbol: 'BNB', name: 'BNB', price: 312.45, change: 0.87, icon: '⬡' },
   { symbol: 'SOL', name: 'Solana', price: 98.65, change: 5.43, icon: '◎' },
   { symbol: 'XRP', name: 'XRP', price: 0.62, change: -0.54, icon: '✕' },
+  { symbol: 'ADA', name: 'Cardano', price: 0.52, change: 1.23, icon: '₳' },
+  { symbol: 'DOGE', name: 'Dogecoin', price: 0.08, change: 3.45, icon: 'Ð' },
+  { symbol: 'LTC', name: 'Litecoin', price: 72.50, change: -0.87, icon: 'Ł' },
+  { symbol: 'EUR', name: 'Euro', price: 1.08, change: 0.12, icon: '€' },
+  { symbol: 'USD', name: 'US Dollar', price: 1.00, change: 0.00, icon: '$' },
+  { symbol: 'GBP', name: 'British Pound', price: 1.27, change: 0.05, icon: '£' },
+  { symbol: 'CHF', name: 'Swiss Franc', price: 1.12, change: -0.03, icon: '₣' },
 ];
 
 export function App({ AuthButtons, PromoCodeInput }: AppProps) {
@@ -58,6 +69,10 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
   const [currentPage, setCurrentPage] = useState<'exchange' | 'reviews' | 'track'>('exchange');
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoCode, setPromoCode] = useState('');
+  const [showFromCurrencySelector, setShowFromCurrencySelector] = useState(false);
+  const [showToCurrencySelector, setShowToCurrencySelector] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ id: string; city: string; country: string; flag: string } | null>(null);
 
   const t = (key: TranslationKey) => translations[currentLang][key];
 
@@ -313,8 +328,8 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                   <div className="bg-slate-700/50 rounded-2xl p-4 border border-slate-600/50">
                     <div className="flex items-center space-x-4">
                       <button
-                        onClick={() => setSelectedFrom(selectedFrom)}
-                        className="flex items-center space-x-3 bg-slate-600/50 rounded-xl px-4 py-3 hover:bg-slate-600 transition-colors"
+                        onClick={() => setShowFromCurrencySelector(true)}
+                        className="flex items-center space-x-3 bg-slate-600/50 rounded-xl px-4 py-3 hover:bg-slate-600 transition-colors group"
                       >
                         <span className="text-2xl">{selectedFrom.icon}</span>
                         <div className="text-left">
@@ -322,7 +337,7 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                           <div className="text-xs text-slate-400">{selectedFrom.name}</div>
                         </div>
                         <svg
-                          className="w-4 h-4 text-slate-400"
+                          className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -375,8 +390,8 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                   <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
                     <div className="flex items-center space-x-4">
                       <button
-                        onClick={() => setSelectedTo(selectedTo)}
-                        className="flex items-center space-x-3 bg-slate-600/30 rounded-xl px-4 py-3 hover:bg-slate-600/50 transition-colors"
+                        onClick={() => setShowToCurrencySelector(true)}
+                        className="flex items-center space-x-3 bg-slate-600/30 rounded-xl px-4 py-3 hover:bg-slate-600/50 transition-colors group"
                       >
                         <span className="text-2xl">{selectedTo.icon}</span>
                         <div className="text-left">
@@ -384,7 +399,7 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                           <div className="text-xs text-slate-400">{selectedTo.name}</div>
                         </div>
                         <svg
-                          className="w-4 h-4 text-slate-400"
+                          className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -409,6 +424,38 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                       ${(parseFloat(amountTo || '0') * selectedTo.price).toFixed(2)}
                     </div>
                   </div>
+                </div>
+
+                {/* Location Selector */}
+                <div className="mb-4">
+                  <label className="block text-slate-400 text-sm mb-2">Location</label>
+                  <button
+                    onClick={() => setShowLocationSelector(true)}
+                    className="w-full flex items-center justify-between bg-slate-700/30 rounded-xl px-4 py-3 border border-slate-600/30 hover:border-emerald-500/50 transition-colors group"
+                  >
+                    <div className="flex items-center space-x-3">
+                      {selectedLocation ? (
+                        <>
+                          <span className="text-xl">{selectedLocation.flag}</span>
+                          <div className="text-left">
+                            <div className="font-medium text-white">{selectedLocation.city}</div>
+                            <div className="text-xs text-slate-400">{selectedLocation.country}</div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="text-slate-400">Select pickup location</span>
+                        </>
+                      )}
+                    </div>
+                    <svg className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
                 </div>
 
                 <div className="flex items-center justify-between text-sm text-slate-400 mb-4">
@@ -882,6 +929,49 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
 
       {/* Support Chat Widget */}
       <SupportChat lang={currentLang} />
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
+
+      {/* Currency Selector Modals */}
+      <CurrencySelector
+        isOpen={showFromCurrencySelector}
+        onClose={() => setShowFromCurrencySelector(false)}
+        onSelect={(currency) => setSelectedFrom(currency)}
+        currencies={currencies}
+        selectedCurrency={selectedFrom}
+        title={t('youSend')}
+      />
+
+      <CurrencySelector
+        isOpen={showToCurrencySelector}
+        onClose={() => setShowToCurrencySelector(false)}
+        onSelect={(currency) => setSelectedTo(currency)}
+        currencies={currencies}
+        selectedCurrency={selectedTo}
+        title={t('youReceive')}
+      />
+
+      {/* Location Selector Modal */}
+      <LocationSelector
+        isOpen={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onSelect={(location) => setSelectedLocation({
+          id: location.id,
+          city: location.city,
+          country: location.country,
+          flag: location.flag
+        })}
+        selectedLocation={selectedLocation ? {
+          id: selectedLocation.id,
+          country: selectedLocation.country,
+          countryCode: '',
+          city: selectedLocation.city,
+          isAvailable: true,
+          flag: selectedLocation.flag
+        } : null}
+        lang={currentLang}
+      />
     </div>
   );
 }

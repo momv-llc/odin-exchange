@@ -1,1 +1,310 @@
 @import "tailwindcss";
+
+/* Custom Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalSlideOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
+  }
+}
+
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Animation Classes */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-fadeOut {
+  animation: fadeOut 0.3s ease-out forwards;
+}
+
+.animate-modalSlideIn {
+  animation: modalSlideIn 0.3s ease-out forwards;
+}
+
+.animate-modalSlideOut {
+  animation: modalSlideOut 0.3s ease-out forwards;
+}
+
+.animate-slideInFromRight {
+  animation: slideInFromRight 0.5s ease-out forwards;
+}
+
+.animate-slideInFromLeft {
+  animation: slideInFromLeft 0.5s ease-out forwards;
+}
+
+.animate-slideInFromBottom {
+  animation: slideInFromBottom 0.5s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-ticker {
+  animation: ticker 60s linear infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Stagger animations */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* Scrollbar styling */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.5);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #10b981, #06b6d4, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.3);
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 8px 30px -10px rgba(16, 185, 129, 0.3);
+}
+
+/* Button styles */
+.btn-primary {
+  @apply px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-medium text-white;
+  @apply hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-300;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-slate-700/50 rounded-xl font-medium text-white border border-slate-600/50;
+  @apply hover:bg-slate-600/50 hover:border-slate-500/50 transition-all duration-300;
+}
+
+/* Input styles */
+.input-base {
+  @apply w-full bg-slate-700/50 text-white px-4 py-3 rounded-xl border border-slate-600/50;
+  @apply focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50;
+  @apply transition-all duration-300 placeholder-slate-400;
+}
+
+/* Badge styles */
+.badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+  @apply bg-emerald-500/10 text-emerald-400;
+}
+
+.badge-warning {
+  @apply bg-yellow-500/10 text-yellow-400;
+}
+
+.badge-danger {
+  @apply bg-red-500/10 text-red-400;
+}
+
+.badge-info {
+  @apply bg-blue-500/10 text-blue-400;
+}
+
+/* Tooltip */
+.tooltip {
+  @apply invisible opacity-0 absolute z-50 px-2 py-1 text-xs text-white bg-slate-900 rounded;
+  @apply transition-all duration-200;
+}
+
+.tooltip-trigger:hover .tooltip {
+  @apply visible opacity-100;
+}
+
+/* Map container styles */
+.map-container {
+  @apply relative overflow-hidden rounded-xl;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+}
+
+/* Marquee effect */
+.marquee {
+  display: flex;
+  overflow: hidden;
+  user-select: none;
+}
+
+.marquee-content {
+  display: flex;
+  animation: ticker 30s linear infinite;
+}
+
+.marquee:hover .marquee-content {
+  animation-play-state: paused;
+}
+
+/* Loading skeleton */
+.skeleton {
+  background: linear-gradient(90deg, rgba(51, 65, 85, 0.5) 25%, rgba(71, 85, 105, 0.5) 50%, rgba(51, 65, 85, 0.5) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Focus ring */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900;
+}
