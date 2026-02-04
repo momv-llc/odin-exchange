@@ -222,6 +222,9 @@ docker-compose down
 
 ### 5. Локальная разработка (без Docker)
 
+> При локальной разработке убедитесь, что PostgreSQL и Redis запущены, а переменные
+> окружения (`DATABASE_URL`, `REDIS_HOST`, `REDIS_PORT`) указывают на локальные сервисы.
+
 ```bash
 # Backend
 cd backend
@@ -236,6 +239,11 @@ npm install
 npm run dev
 ```
 
+### 5. Проверка запуска
+
+- Frontend: http://localhost:3001 (или порт, указанный Vite)
+- API: http://localhost:3000
+- MailHog (если используется через Docker): http://localhost:8025
 ### 6. Быстрый старт для разработки (альтернатива)
 
 ```bash

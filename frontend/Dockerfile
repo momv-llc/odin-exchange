@@ -19,6 +19,11 @@ ARG VITE_API_URL
 
 ENV VITE_API_URL=${VITE_API_URL}
 
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
+# Copy built files
+COPY --from=builder /app/dist /usr/share/nginx/html
 # Собираем проект
 RUN npm run build
 
