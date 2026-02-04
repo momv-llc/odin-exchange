@@ -128,12 +128,101 @@
 - ✅ Analytics
 - ✅ Exchange Rates
 
-## 🛠 Установка и запуск
+## 📦 Зависимости проекта
 
-### Требования
+Ниже перечислены **все зависимости**, указанные в `package.json` для backend и frontend, а также внешние сервисы, необходимые для работы.
+
+### Системные зависимости
 - Node.js 20+
-- Docker и Docker Compose
+- Docker и Docker Compose (для контейнерного запуска)
+- PostgreSQL 15+
+- Redis 7+
 - Git
+
+### Backend (production dependencies)
+- @nestjs/axios
+- @nestjs/bull
+- @nestjs/common
+- @nestjs/config
+- @nestjs/core
+- @nestjs/event-emitter
+- @nestjs/jwt
+- @nestjs/passport
+- @nestjs/platform-express
+- @nestjs/schedule
+- @nestjs/swagger
+- @nestjs/terminus
+- @nestjs/throttler
+- @prisma/client
+- argon2
+- axios
+- bcrypt
+- bull
+- class-transformer
+- class-validator
+- cors
+- helmet
+- ioredis
+- joi
+- nanoid
+- otplib
+- passport
+- passport-jwt
+- passport-local
+- qrcode
+- reflect-metadata
+- rxjs
+- stripe
+- web-push
+
+### Backend (dev dependencies)
+- @nestjs/cli
+- @nestjs/schematics
+- @nestjs/testing
+- @types/bcrypt
+- @types/express
+- @types/jest
+- @types/multer
+- @types/node
+- @types/nodemailer
+- @types/passport-jwt
+- @types/passport-local
+- @types/qrcode
+- @types/uuid
+- @types/web-push
+- @typescript-eslint/eslint-plugin
+- @typescript-eslint/parser
+- eslint
+- jest
+- prisma
+- ts-jest
+- ts-node
+- typescript
+
+### Frontend (production dependencies)
+- axios
+- clsx
+- lucide-react
+- react
+- react-dom
+- react-router-dom
+- tailwind-merge
+
+### Frontend (dev dependencies)
+- @tailwindcss/postcss
+- @tailwindcss/vite
+- @types/node
+- @types/react
+- @types/react-dom
+- @vitejs/plugin-react
+- autoprefixer
+- postcss
+- tailwindcss
+- typescript
+- vite
+- vite-plugin-singlefile
+
+## 🛠 Установка и запуск
 
 ### 1. Клонирование репозитория
 
@@ -165,7 +254,11 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### 4. Локальная разработка
+### 4. Локальная разработка (шаг за шагом)
+
+1) Поднимите PostgreSQL и Redis (например, локально или через Docker).
+2) Проверьте, что переменные `DATABASE_URL`, `REDIS_HOST`, `REDIS_PORT` и `JWT_*` в `.env` заполнены корректно.
+3) Установите зависимости и запустите backend:
 
 ```bash
 # Backend
@@ -174,7 +267,11 @@ npm install
 npx prisma generate
 npx prisma migrate dev
 npm run start:dev
+```
 
+4) В отдельном терминале установите зависимости и запустите frontend:
+
+```bash
 # Frontend (в отдельном терминале)
 cd frontend
 npm install
