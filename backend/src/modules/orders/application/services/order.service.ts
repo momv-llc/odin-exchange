@@ -70,7 +70,7 @@ export class OrderService {
     let code: string | null = null;
 
     for (let i = 0; i < 5; i++) {
-      const generated = this.codeGen.generate().code;
+      const generated = CodeGenerator.generate(); // без .code
 
       const exists = await this.prisma.order.findUnique({
         where: { code: generated },
