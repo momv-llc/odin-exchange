@@ -90,7 +90,7 @@ export class UserAuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout from current device' })
   async logout(@Req() req: Request, @Body() dto: RefreshTokenDto) {
-    return this.authService.logout(req.user['id'], dto.refreshToken);
+    return this.authService.logout(req.user!.id, dto.refreshToken);
   }
 
   @Post('logout-all')
@@ -99,7 +99,7 @@ export class UserAuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout from all devices' })
   async logoutAll(@Req() req: Request) {
-    return this.authService.logoutAll(req.user['id']);
+    return this.authService.logoutAll(req.user!.id);
   }
 
   @Get('me')
@@ -107,7 +107,7 @@ export class UserAuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   async getProfile(@Req() req: Request) {
-    return this.authService.getProfile(req.user['id']);
+    return this.authService.getProfile(req.user!.id);
   }
 
   @Put('me')
@@ -115,7 +115,7 @@ export class UserAuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user profile' })
   async updateProfile(@Req() req: Request, @Body() dto: UpdateProfileDto) {
-    return this.authService.updateProfile(req.user['id'], dto);
+    return this.authService.updateProfile(req.user!.id, dto);
   }
 
   @Post('change-password')
@@ -124,7 +124,7 @@ export class UserAuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change password' })
   async changePassword(@Req() req: Request, @Body() dto: ChangePasswordDto) {
-    return this.authService.changePassword(req.user['id'], dto);
+    return this.authService.changePassword(req.user!.id, dto);
   }
 
   @Get('sessions')
@@ -132,7 +132,7 @@ export class UserAuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get active sessions' })
   async getSessions(@Req() req: Request) {
-    return this.authService.getSessions(req.user['id']);
+    return this.authService.getSessions(req.user!.id);
   }
 
   @Delete('sessions/:id')
@@ -140,6 +140,6 @@ export class UserAuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke a session' })
   async revokeSession(@Req() req: Request, @Param('id') sessionId: string) {
-    return this.authService.revokeSession(req.user['id'], sessionId);
+    return this.authService.revokeSession(req.user!.id, sessionId);
   }
 }
