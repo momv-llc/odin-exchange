@@ -54,7 +54,7 @@ export class AdminReviewsController {
     @Req() req: Request,
     @Body('notes') notes?: string,
   ) {
-    return this.reviewsService.approve(id, req.user['sub'], notes);
+    return this.reviewsService.approve(id, req.user!.id, notes);
   }
 
   @Patch(':id/reject')
@@ -65,7 +65,7 @@ export class AdminReviewsController {
     @Req() req: Request,
     @Body('notes') notes: string,
   ) {
-    return this.reviewsService.reject(id, req.user['sub'], notes);
+    return this.reviewsService.reject(id, req.user!.id, notes);
   }
 
   @Patch(':id')
@@ -76,7 +76,7 @@ export class AdminReviewsController {
     @Body() dto: UpdateReviewDto,
     @Req() req: Request,
   ) {
-    return this.reviewsService.update(id, dto, req.user['sub']);
+    return this.reviewsService.update(id, dto, req.user!.id);
   }
 
   @Delete(':id')

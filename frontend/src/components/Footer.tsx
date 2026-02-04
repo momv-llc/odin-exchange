@@ -86,7 +86,7 @@ export function Footer({ currentLang }: FooterProps) {
               <li><Link to="/terms" className="hover:text-emerald-400 transition-colors">Terms of Service</Link></li>
               <li><Link to="/privacy" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link></li>
               <li><Link to="/aml" className="hover:text-emerald-400 transition-colors">AML/KYC</Link></li>
-              <li><Link to="/risk" className="hover:text-emerald-400 transition-colors">Risk Disclosure</Link></li>
+              <li><Link to="/exchange-rules" className="hover:text-emerald-400 transition-colors">Exchange Rules</Link></li>
             </ul>
           </div>
         </div>
