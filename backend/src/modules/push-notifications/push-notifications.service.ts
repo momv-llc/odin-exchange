@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '@/core/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import * as webpush from 'web-push';
 
@@ -20,6 +20,15 @@ export interface SendNotificationDto {
   url?: string;
   data?: Record<string, any>;
 }
+
+type PushSubscriptionRecord = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  userId: string;
+  isActive: boolean;
+};
 
 @Injectable()
 export class PushNotificationsService {
@@ -161,7 +170,7 @@ export class PushNotificationsService {
         isActive: true,
         userId: { notIn: excludeUserIds },
       },
-    });
+    }) as PushSubscriptionRecord[];
 
     const notificationRecord = await this.prisma.pushNotification.create({
       data: {

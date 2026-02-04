@@ -1,6 +1,7 @@
 import { ComponentType, useEffect, useState } from 'react';
 import { Language } from '../translations';
 import { ExchangeWidget } from '../components/ExchangeWidget';
+import { RateHistoryChart } from '../components/RateHistoryChart';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { TrendingUp, Shield, Zap, Users, ArrowRight, Star, ChevronRight, Globe, Clock, Award } from 'lucide-react';
@@ -206,6 +207,10 @@ export function Home({ currentLang, setCurrentLang, AuthButtons }: HomeProps) {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <div className="mt-10">
+              <RateHistoryChart baseCurrency="BTC" quoteCurrency="USDT" interval="1h" limit={48} />
             </div>
           </div>
         </section>

@@ -2,6 +2,11 @@ import { ReactNode, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { UserAuthProvider, useUserAuth, AuthModal, ProfileModal } from './auth';
 import { ABTestingProvider, useABTesting, ABAnalytics } from './abTesting';
+import { useEffect, useState } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { UserAuthProvider } from './auth';
+import { ABTestingProvider, useABTesting, ABAnalytics } from './abTesting';
+import { Language } from './translations';
 import { Home } from './pages/Home';
 import { Reviews } from './pages/Reviews';
 import { TrackRequest } from './pages/TrackRequest';
@@ -21,25 +26,26 @@ function AuthButtons({ onAuthSuccess }: { onAuthSuccess: () => void }) {
   if (isLoading) {
     return <div className="w-20 h-10 bg-slate-700/50 rounded-lg animate-pulse" />;
   }
+import { AuthPage } from './pages/AuthPage';
+import { AccountPage } from './pages/AccountPage';
+import { Integrations } from './pages/Integrations';
+import { PaymentSystems } from './pages/PaymentSystems';
+import { AnalyticsInfo } from './pages/AnalyticsInfo';
+import { ExchangeRatesInfo } from './pages/ExchangeRatesInfo';
+import { PushNotificationsPage } from './pages/PushNotifications';
+import { TermsOfService } from './pages/Legall/Legal_TermsOfService';
+import { PrivacyPolicy } from './pages/Legall/Legal_PrivacyPolicy';
+import { AMLPolicy } from './pages/Legall/Legal_AMLPolicy';
+import { ExchangeRules } from './pages/Legall/Legal_ExchangeRules';
 
-  if (isAuthenticated && user) {
-    return (
-      <>
-        <button
-          onClick={() => setShowProfileModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-slate-700/50 rounded-lg hover:bg-slate-600/50 transition-colors"
-        >
-          <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-full flex items-center justify-center text-sm font-bold">
-            {user.firstName?.[0] || user.email[0].toUpperCase()}
-          </div>
-          <span className="text-white text-sm hidden md:block">
-            {user.firstName || user.email.split('@')[0]}
-          </span>
-        </button>
-        <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
-      </>
-    );
-  }
+function AppRoutes() {
+  const location = useLocation();
+  const { experiments } = useABTesting();
+  const [currentLang, setCurrentLang] = useState<Language>('en');
+
+  useEffect(() => {
+    ABAnalytics.trackPageView(location.pathname, experiments);
+  }, [location.pathname, experiments]);
 
   return (
     <>
@@ -182,11 +188,53 @@ const handleABConversion = (
   // });
 };
 
+    <Routes>
+      <Route path="/" element={<Home currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/exchange" element={<Navigate to="/" replace />} />
+      <Route path="/reviews" element={<Reviews currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/track" element={<TrackRequest currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/track/:code" element={<TrackRequest currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/kyc" element={<KycVerification currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/referral" element={<ReferralProgram currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/affiliate" element={<Navigate to="/referral" replace />} />
+      <Route path="/wallet" element={<Navigate to="/account" replace />} />
+      <Route path="/terms" element={<TermsOfService currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/privacy" element={<PrivacyPolicy currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/aml" element={<AMLPolicy currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/risk" element={<ExchangeRules currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/login" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="login" />} />
+      <Route path="/register" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="register" />} />
+      <Route path="/account" element={<AccountPage currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/exchange-rules" element={<ExchangeRules currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/risk" element={<Navigate to="/exchange-rules" replace />} />
+      <Route path="/login" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="login" />} />
+      <Route path="/register" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="register" />} />
+      <Route path="/account" element={<AccountPage currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/integrations" element={<Integrations currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/payment-systems" element={<PaymentSystems currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/analytics" element={<AnalyticsInfo currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/exchange-rates" element={<ExchangeRatesInfo currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/push-notifications" element={<PushNotificationsPage currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/markets" element={<Navigate to="/" replace />} />
+      <Route path="/api" element={<Navigate to="/" replace />} />
+      <Route path="/business" element={<Navigate to="/" replace />} />
+      <Route path="/help" element={<Navigate to="/" replace />} />
+      <Route path="/fees" element={<Navigate to="/" replace />} />
+      <Route path="/api-docs" element={<Navigate to="/" replace />} />
+      <Route path="/contact" element={<Navigate to="/" replace />} />
+      <Route path="/compliance" element={<Navigate to="/" replace />} />
+      <Route path="/licenses" element={<Navigate to="/" replace />} />
+      <Route path="/certificates" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export function AppWrapper() {
   return (
-    <ABTestingProvider onConversion={handleABConversion}>
+    <ABTestingProvider>
       <UserAuthProvider>
-        <AppWithAuth />
+        <AppRoutes />
       </UserAuthProvider>
     </ABTestingProvider>
   );
