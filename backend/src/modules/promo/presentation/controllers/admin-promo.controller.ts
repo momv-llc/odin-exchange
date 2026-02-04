@@ -29,7 +29,7 @@ export class AdminPromoController {
   @Roles('SUPER_ADMIN', 'ADMIN')
   @ApiOperation({ summary: 'Create a new promo code' })
   async create(@Body() dto: CreatePromoDto, @Req() req: Request) {
-    return this.promoService.create(dto, req.user['sub']);
+    return this.promoService.create(dto, req.user!.id);
   }
 
   @Get()

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { PrismaService } from '@/core/database/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   CreateTransferDto,
