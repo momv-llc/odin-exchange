@@ -10,6 +10,11 @@ import { KycVerification } from './pages/KycVerification';
 import { ReferralProgram } from './pages/ReferralProgram';
 import { AuthPage } from './pages/AuthPage';
 import { AccountPage } from './pages/AccountPage';
+import { Integrations } from './pages/Integrations';
+import { PaymentSystems } from './pages/PaymentSystems';
+import { AnalyticsInfo } from './pages/AnalyticsInfo';
+import { ExchangeRatesInfo } from './pages/ExchangeRatesInfo';
+import { PushNotificationsPage } from './pages/PushNotifications';
 import { TermsOfService } from './pages/Legall/Legal_TermsOfService';
 import { PrivacyPolicy } from './pages/Legall/Legal_PrivacyPolicy';
 import { AMLPolicy } from './pages/Legall/Legal_AMLPolicy';
@@ -38,10 +43,16 @@ function AppRoutes() {
       <Route path="/terms" element={<TermsOfService currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/privacy" element={<PrivacyPolicy currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/aml" element={<AMLPolicy currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
-      <Route path="/risk" element={<ExchangeRules currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/exchange-rules" element={<ExchangeRules currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/risk" element={<Navigate to="/exchange-rules" replace />} />
       <Route path="/login" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="login" />} />
       <Route path="/register" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="register" />} />
       <Route path="/account" element={<AccountPage currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/integrations" element={<Integrations currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/payment-systems" element={<PaymentSystems currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/analytics" element={<AnalyticsInfo currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/exchange-rates" element={<ExchangeRatesInfo currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/push-notifications" element={<PushNotificationsPage currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/markets" element={<Navigate to="/" replace />} />
       <Route path="/api" element={<Navigate to="/" replace />} />
       <Route path="/business" element={<Navigate to="/" replace />} />

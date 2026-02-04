@@ -135,6 +135,64 @@
 - Docker и Docker Compose
 - Git
 
+## 📦 Зависимости проекта
+
+Ниже собраны все ключевые зависимости, используемые в проекте.
+
+### Backend (NestJS)
+
+**Основные:**
+- `@nestjs/*` (core, axios, bull, config, jwt, passport, schedule, swagger, terminus, throttler)
+- `@prisma/client`
+- `argon2`, `bcrypt`
+- `axios`
+- `bull`
+- `class-transformer`, `class-validator`
+- `cors`, `helmet`
+- `ioredis`
+- `joi`
+- `nanoid`
+- `otplib`
+- `passport`, `passport-jwt`, `passport-local`
+- `qrcode`
+- `rxjs`
+- `stripe`
+- `web-push`
+
+**Dev:**
+- `@nestjs/cli`, `@nestjs/schematics`, `@nestjs/testing`
+- `@types/*` (node, jest, bcrypt, express, multer, nodemailer, passport-*, qrcode, uuid, web-push)
+- `@typescript-eslint/*`
+- `eslint`
+- `jest`, `ts-jest`
+- `prisma`
+- `ts-node`
+- `typescript`
+
+### Frontend (React + Vite)
+
+**Основные:**
+- `react`, `react-dom`
+- `react-router-dom`
+- `axios`
+- `clsx`
+- `lucide-react`
+- `tailwind-merge`
+
+**Dev:**
+- `vite`, `@vitejs/plugin-react`, `vite-plugin-singlefile`
+- `tailwindcss`, `@tailwindcss/vite`, `@tailwindcss/postcss`
+- `postcss`, `autoprefixer`
+- `@types/node`, `@types/react`, `@types/react-dom`
+- `typescript`
+
+### Инфраструктура
+- PostgreSQL
+- Redis
+- Docker / Docker Compose
+- Nginx (reverse proxy)
+- MailHog (dev)
+
 ### 1. Клонирование репозитория
 
 ```bash
@@ -167,6 +225,9 @@ docker-compose down
 
 ### 4. Локальная разработка
 
+> При локальной разработке убедитесь, что PostgreSQL и Redis запущены, а переменные
+> окружения (`DATABASE_URL`, `REDIS_HOST`, `REDIS_PORT`) указывают на локальные сервисы.
+
 ```bash
 # Backend
 cd backend
@@ -180,6 +241,12 @@ cd frontend
 npm install
 npm run dev
 ```
+
+### 5. Проверка запуска
+
+- Frontend: http://localhost:3001 (или порт, указанный Vite)
+- API: http://localhost:3000
+- MailHog (если используется через Docker): http://localhost:8025
 
 ## 🔧 Конфигурация
 

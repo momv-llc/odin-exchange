@@ -1,4 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
+import { api } from '../lib/api/client';
+
+interface LiveRateResponse {
+  baseCurrency: string;
+  quoteCurrency: string;
+  rate: number | string;
+  change24h?: number | string | null;
+  source?: string;
+}
 
 interface TickerItem {
   symbol: string;
@@ -9,46 +18,187 @@ interface TickerItem {
   type: 'crypto' | 'fiat' | 'commodity';
 }
 
-const initialTickerData: TickerItem[] = [
-  // Crypto
-  { symbol: 'BTC', name: 'Bitcoin', price: 97500.50, change: 2.34, icon: '₿', type: 'crypto' },
-  { symbol: 'ETH', name: 'Ethereum', price: 3280.75, change: -1.23, icon: 'Ξ', type: 'crypto' },
-  { symbol: 'USDT', name: 'Tether', price: 1.00, change: 0.01, icon: '₮', type: 'crypto' },
-  { symbol: 'BNB', name: 'BNB', price: 612.45, change: 0.87, icon: '⬡', type: 'crypto' },
-  { symbol: 'SOL', name: 'Solana', price: 198.65, change: 5.43, icon: '◎', type: 'crypto' },
-  { symbol: 'XRP', name: 'XRP', price: 2.62, change: -0.54, icon: '✕', type: 'crypto' },
-  // Fiat currencies
-  { symbol: 'EUR/USD', name: 'Euro', price: 1.0842, change: 0.12, icon: '€', type: 'fiat' },
-  { symbol: 'GBP/USD', name: 'Pound', price: 1.2651, change: -0.08, icon: '£', type: 'fiat' },
-  { symbol: 'USD/RUB', name: 'Ruble', price: 89.45, change: 0.34, icon: '₽', type: 'fiat' },
-  { symbol: 'USD/UAH', name: 'Hryvnia', price: 41.25, change: 0.15, icon: '₴', type: 'fiat' },
-  { symbol: 'USD/CHF', name: 'Franc', price: 0.8823, change: -0.21, icon: 'Fr', type: 'fiat' },
-  // Commodities
-  { symbol: 'XAU', name: 'Gold', price: 2045.30, change: 0.45, icon: '🥇', type: 'commodity' },
-  { symbol: 'XAG', name: 'Silver', price: 23.15, change: -0.32, icon: '🥈', type: 'commodity' },
-  { symbol: 'OIL', name: 'Brent', price: 82.45, change: 1.23, icon: '🛢️', type: 'commodity' },
-];
+const CRYPTO_SYMBOLS = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP'];
+const FIAT_PAIRS = ['EUR/USD', 'GBP/USD', 'USD/RUB', 'USD/UAH', 'USD/CHF'];
+const COMMODITY_SYMBOLS = ['XAU', 'XAG', 'OIL'];
+
+const NAME_MAP: Record<string, string> = {
+  BTC: 'Bitcoin',
+  ETH: 'Ethereum',
+  USDT: 'Tether',
+  BNB: 'BNB',
+  SOL: 'Solana',
+  XRP: 'XRP',
+  EUR: 'Euro',
+  GBP: 'Pound',
+  USD: 'US Dollar',
+  RUB: 'Ruble',
+  UAH: 'Hryvnia',
+  CHF: 'Franc',
+  XAU: 'Gold',
+  XAG: 'Silver',
+  OIL: 'Brent',
+};
+
+const ICON_MAP: Record<string, string> = {
+  BTC: '₿',
+  ETH: 'Ξ',
+  USDT: '₮',
+  BNB: '⬡',
+  SOL: '◎',
+  XRP: '✕',
+  EUR: '€',
+  GBP: '£',
+  USD: '$',
+  RUB: '₽',
+  UAH: '₴',
+  CHF: 'Fr',
+  XAU: '🥇',
+  XAG: '🥈',
+  OIL: '🛢️',
+};
+
+const CRYPTO_REFRESH_MS = 60 * 1000;
+const FIAT_REFRESH_MS = 60 * 60 * 1000;
+
+const getRateType = (rate: LiveRateResponse): TickerItem['type'] => {
+  const base = rate.baseCurrency.toUpperCase();
+
+  if (COMMODITY_SYMBOLS.includes(base)) {
+    return 'commodity';
+  }
+
+  if (rate.source === 'FIXER') {
+    return 'fiat';
+  }
+
+  return 'crypto';
+};
+
+const buildSymbol = (base: string, quote: string, type: TickerItem['type']) => {
+  if (type === 'crypto' || type === 'commodity') {
+    return base;
+  }
+
+  return `${base}/${quote}`;
+};
+
+const normalizeRates = (rates: LiveRateResponse[]) => {
+  return rates
+    .map((rate) => {
+      const base = rate.baseCurrency.toUpperCase();
+      const quote = rate.quoteCurrency.toUpperCase();
+      const type = getRateType(rate);
+      const symbol = buildSymbol(base, quote, type);
+      const price = Number(rate.rate);
+      const change = Number(rate.change24h ?? 0);
+
+      if (!Number.isFinite(price)) {
+        return null;
+      }
+
+      return {
+        symbol,
+        name: NAME_MAP[base] ?? base,
+        price,
+        change: Number.isFinite(change) ? change : 0,
+        icon: ICON_MAP[base] ?? '●',
+        type,
+      } as TickerItem;
+    })
+    .filter((item): item is TickerItem => Boolean(item));
+};
+
+const sortTickerData = (items: TickerItem[]) => {
+  const typeOrder: Record<TickerItem['type'], number> = {
+    crypto: 0,
+    fiat: 1,
+    commodity: 2,
+  };
+
+  return [...items].sort((a, b) => {
+    if (typeOrder[a.type] !== typeOrder[b.type]) {
+      return typeOrder[a.type] - typeOrder[b.type];
+    }
+
+    if (a.type === 'crypto') {
+      return CRYPTO_SYMBOLS.indexOf(a.symbol) - CRYPTO_SYMBOLS.indexOf(b.symbol);
+    }
+
+    if (a.type === 'commodity') {
+      return COMMODITY_SYMBOLS.indexOf(a.symbol) - COMMODITY_SYMBOLS.indexOf(b.symbol);
+    }
+
+    return FIAT_PAIRS.indexOf(a.symbol) - FIAT_PAIRS.indexOf(b.symbol);
+  });
+};
 
 export function CurrencyTicker() {
-  const [tickerData, setTickerData] = useState<TickerItem[]>(initialTickerData);
+  const [tickerData, setTickerData] = useState<TickerItem[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const tickerRef = useRef<HTMLDivElement>(null);
 
-  // Simulate price updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTickerData((prev) =>
-        prev.map((item) => ({
-          ...item,
-          price: item.type === 'crypto'
-            ? item.price * (1 + (Math.random() - 0.5) * 0.002)
-            : item.price * (1 + (Math.random() - 0.5) * 0.0005),
-          change: item.change + (Math.random() - 0.5) * 0.1,
-        }))
-      );
-    }, 5000);
+  const fetchLiveRates = async () => {
+    const response = await api.get<LiveRateResponse[]>('/exchange-rates/live');
+    return Array.isArray(response.data) ? response.data : [];
+  };
 
-    return () => clearInterval(interval);
+  const updateTickerData = (items: TickerItem[], typesToReplace: TickerItem['type'][]) => {
+    setTickerData((prev) => {
+      const retained = prev.filter((item) => !typesToReplace.includes(item.type));
+      return sortTickerData([...retained, ...items]);
+    });
+  };
+
+  const updateCryptoRates = async (isActive: () => boolean) => {
+    try {
+      const rates = await fetchLiveRates();
+      if (!isActive()) {
+        return;
+      }
+      const normalized = normalizeRates(rates).filter(
+        (rate) => rate.type === 'crypto' && CRYPTO_SYMBOLS.includes(rate.symbol)
+      );
+      updateTickerData(normalized, ['crypto']);
+    } catch (error) {
+      console.error('Failed to fetch crypto rates:', error);
+    }
+  };
+
+  const updateFiatRates = async (isActive: () => boolean) => {
+    try {
+      const rates = await fetchLiveRates();
+      if (!isActive()) {
+        return;
+      }
+      const normalized = normalizeRates(rates).filter((rate) => {
+        if (rate.type === 'commodity') {
+          return COMMODITY_SYMBOLS.includes(rate.symbol);
+        }
+
+        return rate.type === 'fiat' && FIAT_PAIRS.includes(rate.symbol);
+      });
+      updateTickerData(normalized, ['fiat', 'commodity']);
+    } catch (error) {
+      console.error('Failed to fetch fiat rates:', error);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    const isActive = () => active;
+
+    updateCryptoRates(isActive);
+    updateFiatRates(isActive);
+
+    const cryptoInterval = setInterval(() => updateCryptoRates(isActive), CRYPTO_REFRESH_MS);
+    const fiatInterval = setInterval(() => updateFiatRates(isActive), FIAT_REFRESH_MS);
+
+    return () => {
+      active = false;
+      clearInterval(cryptoInterval);
+      clearInterval(fiatInterval);
+    };
   }, []);
 
   const formatPrice = (price: number, type: string) => {
