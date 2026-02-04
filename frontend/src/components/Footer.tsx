@@ -66,6 +66,10 @@ export function Footer({ currentLang }: FooterProps) {
               <li><Link to="/markets" className="hover:text-emerald-400 transition-colors">{t('markets')}</Link></li>
               <li><Link to="/wallet" className="hover:text-emerald-400 transition-colors">{t('wallet')}</Link></li>
               <li><Link to="/api" className="hover:text-emerald-400 transition-colors">{t('api')}</Link></li>
+              <li><Link to="/integrations" className="hover:text-emerald-400 transition-colors">Integrations</Link></li>
+              <li><Link to="/payment-systems" className="hover:text-emerald-400 transition-colors">Payment Systems</Link></li>
+              <li><Link to="/analytics" className="hover:text-emerald-400 transition-colors">Analytics</Link></li>
+              <li><Link to="/exchange-rates" className="hover:text-emerald-400 transition-colors">Exchange Rates</Link></li>
               <li><Link to="/business" className="hover:text-emerald-400 transition-colors">Business</Link></li>
               <li><Link to="/affiliate" className="hover:text-emerald-400 transition-colors">Affiliate</Link></li>
             </ul>
