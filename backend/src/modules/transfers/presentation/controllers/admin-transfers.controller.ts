@@ -8,7 +8,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { TransfersService } from '../../services/transfers.service';
 import { UpdateTransferStatusDto, QueryTransfersDto } from '../../dto';
 
