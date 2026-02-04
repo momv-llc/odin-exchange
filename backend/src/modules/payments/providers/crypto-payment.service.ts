@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { PrismaService } from '@/core/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 interface CryptoAddress {
   currency: string;
@@ -115,7 +118,94 @@ export class CryptoPaymentService {
 
   async checkTransaction(txHash: string, network: string) {
     this.logger.log('Checking transaction ' + txHash + ' on ' + network);
-    return { confirmed: false, confirmations: 0, amount: 0 };
+
+    const blockchairNetwork = this.getBlockchairNetwork(network);
+    if (!blockchairNetwork) {
+      return {
+        confirmed: false,
+        confirmations: 0,
+        amount: 0,
+        error: `Unsupported network: ${network}`,
+      };
+    }
+
+    try {
+      const url = `https://api.blockchair.com/${blockchairNetwork}/dashboards/transaction/${txHash}`;
+      const response = await firstValueFrom(
+        this.httpService.get(url, { timeout: 10000 }),
+      );
+      const data = response.data?.data?.[txHash];
+      const context = response.data?.context;
+      const transaction = data?.transaction;
+
+      if (!transaction) {
+        return {
+          confirmed: false,
+          confirmations: 0,
+          amount: 0,
+          error: 'Transaction not found',
+        };
+      }
+
+      const bestHeight = Number(context?.chain?.best_height ?? 0);
+      const blockId = transaction.block_id ? Number(transaction.block_id) : 0;
+      const confirmations = blockId
+        ? Math.max(bestHeight - blockId + 1, 0)
+        : 0;
+      const amount = this.normalizeBalanceChange(
+        blockchairNetwork,
+        transaction.balance_change,
+      );
+
+      return {
+        confirmed: confirmations > 0,
+        confirmations,
+        amount,
+        blockNumber: blockId || undefined,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Failed to check transaction ${txHash} on ${network}: ${error}`,
+      );
+      return {
+        confirmed: false,
+        confirmations: 0,
+        amount: 0,
+        error: 'Failed to fetch transaction from provider',
+      };
+    }
+  }
+
+  private getBlockchairNetwork(network: string): string | null {
+    switch (network) {
+      case 'bitcoin':
+        return 'bitcoin';
+      case 'litecoin':
+        return 'litecoin';
+      case 'ethereum':
+        return 'ethereum';
+      default:
+        return null;
+    }
+  }
+
+  private normalizeBalanceChange(
+    network: string,
+    balanceChange: number | string | undefined,
+  ): number {
+    if (balanceChange === undefined || balanceChange === null) return 0;
+    const value =
+      typeof balanceChange === 'string' ? Number(balanceChange) : balanceChange;
+    if (Number.isNaN(value)) return 0;
+    switch (network) {
+      case 'bitcoin':
+      case 'litecoin':
+        return Math.abs(value) / 1e8;
+      case 'ethereum':
+        return Math.abs(value) / 1e18;
+      default:
+        return Math.abs(value);
+    }
   }
 
   async monitorPendingPayments() {
@@ -125,15 +215,51 @@ export class CryptoPaymentService {
     });
 
     for (const tx of pendingTxs) {
-      if (tx.txHash) {
-        const status = await this.checkTransaction(tx.txHash, tx.wallet.network);
-        if (status.confirmations >= tx.requiredConfs) {
-          await this.prisma.cryptoTransaction.update({
-            where: { id: tx.id },
-            data: { status: 'CONFIRMED', confirmations: status.confirmations },
-          });
-        }
+      if (!tx.txHash) continue;
+
+      const status = await this.checkTransaction(tx.txHash, tx.wallet.network);
+      if (status.error) {
+        await this.prisma.cryptoTransaction.update({
+          where: { id: tx.id },
+          data: {
+            status: 'FAILED',
+            confirmations: status.confirmations,
+            metadata: {
+              error: status.error,
+              checkedAt: new Date().toISOString(),
+            },
+          },
+        });
+        continue;
       }
+
+      const meetsConfirmations = status.confirmations >= tx.requiredConfs;
+      const nextStatus = meetsConfirmations
+        ? 'CONFIRMED'
+        : status.confirmations > 0
+          ? 'CONFIRMING'
+          : 'PENDING';
+
+      await this.prisma.cryptoTransaction.update({
+        where: { id: tx.id },
+        data: {
+          status: nextStatus,
+          confirmations: status.confirmations,
+          blockNumber: status.blockNumber
+            ? BigInt(status.blockNumber)
+            : undefined,
+        },
+      });
+    }
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async handlePendingPaymentsCron() {
+    try {
+      await this.monitorPendingPayments();
+    } catch (error) {
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error('Failed to monitor pending crypto payments.', stack);
     }
   }
 

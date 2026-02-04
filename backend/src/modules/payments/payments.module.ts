@@ -5,7 +5,7 @@ import { PaymentsController } from './payments.controller';
 import { StripeService } from './providers/stripe.service';
 import { PayPalService } from './providers/paypal.service';
 import { CryptoPaymentService } from './providers/crypto-payment.service';
-import { PrismaModule } from '../../prisma/prisma.module';
+import { PrismaModule } from '@/core/database/prisma.module';
 
 @Module({
   imports: [

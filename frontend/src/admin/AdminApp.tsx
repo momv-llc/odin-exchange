@@ -10,6 +10,11 @@ import { PromoPage } from './pages/Promo';
 import { Locations as LocationsPage } from './pages/Locations';
 import { PaymentMethods as PaymentMethodsPage } from './pages/PaymentMethods';
 import { Transfers as TransfersPage } from './pages/Transfers';
+import Analytics from './pages/Analytics';
+import { AuditLogPage } from './pages/AuditLog';
+import AnalyticsPage from './pages/Analytics';
+import { KycPage } from './pages/Kyc';
+import { ReferralsPage } from './pages/Referrals';
 
 function AdminRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -85,6 +90,38 @@ function AdminRoutes() {
         element={
           <AdminLayout>
             <TransfersPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <AdminLayout>
+            <Analytics />
+        path="/audit"
+        element={
+          <AdminLayout>
+            <AuditLogPage />
+        path="/analytics"
+        element={
+          <AdminLayout>
+            <AnalyticsPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/kyc"
+        element={
+          <AdminLayout>
+            <KycPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/referrals"
+        element={
+          <AdminLayout>
+            <ReferralsPage />
           </AdminLayout>
         }
       />
