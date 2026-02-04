@@ -10,6 +10,7 @@ import { PromoPage } from './pages/Promo';
 import { Locations as LocationsPage } from './pages/Locations';
 import { PaymentMethods as PaymentMethodsPage } from './pages/PaymentMethods';
 import { Transfers as TransfersPage } from './pages/Transfers';
+import Analytics from './pages/Analytics';
 
 function AdminRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -85,6 +86,14 @@ function AdminRoutes() {
         element={
           <AdminLayout>
             <TransfersPage />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <AdminLayout>
+            <Analytics />
           </AdminLayout>
         }
       />

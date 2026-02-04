@@ -13,6 +13,7 @@ import {
   MapPin,
   CreditCard,
   Send,
+  BarChart3,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -20,6 +21,7 @@ const menuItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/orders', icon: ShoppingCart, label: 'Orders', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/transfers', icon: Send, label: 'Transfers', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
+  { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/users', icon: Users, label: 'Users', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/reviews', icon: MessageSquare, label: 'Reviews', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/promo', icon: Tag, label: 'Promo Codes', roles: ['SUPER_ADMIN', 'ADMIN'] },
