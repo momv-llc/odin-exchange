@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '@/core/database/prisma.service';
 
 export interface TrackEventDto {
   eventType: string;
@@ -12,6 +12,12 @@ export interface TrackEventDto {
   utmMedium?: string;
   utmCampaign?: string;
 }
+
+type OrderStatsEntry = {
+  status: string;
+  _count: number;
+  _sum: { fromAmount: number | null };
+};
 
 @Injectable()
 export class AnalyticsService {
@@ -71,7 +77,7 @@ export class AnalyticsService {
 
     try {
       // Get order stats
-      const orderStats = await this.prisma.order.groupBy({
+      const orderStatsRaw = await this.prisma.order.groupBy({
         by: ['status'],
         where: {
           createdAt: { gte: yesterday, lt: today },
@@ -79,6 +85,7 @@ export class AnalyticsService {
         _count: true,
         _sum: { fromAmount: true },
       });
+      const orderStats = orderStatsRaw as OrderStatsEntry[];
 
       const totalOrders = orderStats.reduce((sum, s) => sum + s._count, 0);
       const completedOrders = orderStats.find(s => s.status === 'COMPLETED')?._count || 0;

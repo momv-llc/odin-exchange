@@ -112,6 +112,20 @@ const autoReplies: Record<string, Record<string, string>> = {
     'другой вопрос': 'Пожалуйста, опишите ваш вопрос, и мы поможем вам как можно скорее.',
     'default': 'Спасибо за сообщение! Наша команда поддержки ответит в ближайшее время. Для срочных вопросов: support@odinexchange.com',
   },
+  de: {
+    'exchange-status': 'Um den Status Ihres Tauschs zu prüfen, senden Sie bitte Ihren Bestellcode (z. B. ODIN123ABC). Sie können ihn auch auf unserer Website verfolgen.',
+    'zahlungsprobleme': 'Bei Zahlungsproblemen senden Sie bitte Ihren Bestellcode und beschreiben Sie das Problem. Häufige Lösungen: 1) Prüfen, ob die Zahlung an die richtige Adresse gesendet wurde 2) Bankbearbeitung abwarten 3) Bank kontaktieren, wenn die Zahlung abgelehnt wurde.',
+    'verifizierungshilfe': 'Für die Verifizierung benötigen Sie: 1) Gültigen Ausweis (Reisepass/Personalausweis) 2) Adressnachweis (Versorgerrechnung, nicht älter als 3 Monate) 3) Selfie mit Ausweis. Laden Sie die Dokumente im Profil hoch oder senden Sie sie hier.',
+    'andere frage': 'Bitte beschreiben Sie Ihre Frage, wir helfen Ihnen so schnell wie möglich.',
+    'default': 'Danke für Ihre Nachricht! Unser Support-Team antwortet in Kürze. Für dringende Anliegen: support@odinexchange.com',
+  },
+  ua: {
+    'статус обміну': 'Щоб перевірити статус обміну, будь ласка, надішліть код замовлення (наприклад, ODIN123ABC). Також ви можете відстежити його на нашому сайті.',
+    'проблеми з оплатою': 'За проблем із оплатою надішліть код замовлення та опишіть проблему. Часті рішення: 1) Перевірте, що платіж відправлено на правильну адресу 2) Зачекайте на обробку банком 3) Зверніться до банку, якщо платіж відхилено.',
+    'допомога з верифікацією': 'Для верифікації потрібні: 1) Дійсний документ (паспорт/ID-картка) 2) Підтвердження адреси (рахунок за комунальні послуги, не старіший 3 місяців) 3) Селфі з документом. Завантажте документи в профілі або надішліть їх тут.',
+    'інше питання': 'Будь ласка, опишіть ваше питання, і ми допоможемо вам якомога швидше.',
+    'default': 'Дякуємо за повідомлення! Наша команда підтримки відповість найближчим часом. Для термінових питань: support@odinexchange.com',
+  },
 };
 
 // Telegram SVG Icon

@@ -335,10 +335,10 @@ export function ExchangeWidget({ currentLang, onExchangeComplete }: ExchangeWidg
         {/* Exchange Button */}
         <button
           onClick={handleSwap}
-          disabled={isProcessing || !amountFrom || parseFloat(amountFrom) <= 0}
+          disabled={isProcessing}
           className={cn(
             'w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-200',
-            isProcessing || !amountFrom || parseFloat(amountFrom) <= 0
+            isProcessing
               ? 'bg-slate-600 cursor-not-allowed'
               : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/25'
           )}

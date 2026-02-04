@@ -6,7 +6,7 @@ import { ExchangeRatesController } from './exchange-rates.controller';
 import { CoinGeckoService } from './providers/coingecko.service';
 import { FixerService } from './providers/fixer.service';
 import { BinanceService } from './providers/binance.service';
-import { PrismaModule } from '../../prisma/prisma.module';
+import { PrismaModule } from '@/core/database/prisma.module';
 
 @Module({
   imports: [
