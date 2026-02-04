@@ -13,22 +13,28 @@ import {
   MapPin,
   CreditCard,
   Send,
+  BarChart3,
+  ClipboardList,
+  BarChart3,
   ShieldCheck,
-  Users2,
+  Link2,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const menuItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
+  { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/admin/orders', icon: ShoppingCart, label: 'Orders', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/transfers', icon: Send, label: 'Transfers', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
+  { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/users', icon: Users, label: 'Users', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
-  { path: '/admin/kyc', icon: ShieldCheck, label: 'KYC', roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { path: '/admin/referrals', icon: Users2, label: 'Referrals', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { path: '/admin/kyc', icon: ShieldCheck, label: 'KYC', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
+  { path: '/admin/referrals', icon: Link2, label: 'Referrals', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/admin/reviews', icon: MessageSquare, label: 'Reviews', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/promo', icon: Tag, label: 'Promo Codes', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/admin/locations', icon: MapPin, label: 'Locations', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/admin/payment-methods', icon: CreditCard, label: 'Payment Methods', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { path: '/admin/audit', icon: ClipboardList, label: 'Audit Log', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/settings', icon: Settings, label: 'Settings', roles: ['SUPER_ADMIN'] },
 ];
 

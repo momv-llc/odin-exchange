@@ -66,14 +66,7 @@ export function ReferralsPage() {
     }
   };
 
-  const loadStats = async () => {
-    try {
-      const data = await adminApi.get('/admin/referrals/stats');
-      setStats(data);
-    } catch (error) {
-      console.error('Failed to load referral stats:', error);
-    }
-  };
+  const totalPages = Math.max(1, Math.ceil(meta.total / meta.limit));
 
   return (
     <div className="space-y-6">
@@ -111,15 +104,44 @@ export function ReferralsPage() {
       )}
 
       <div className="flex flex-col md:flex-row gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+          <div className="text-sm text-slate-400">Всего рефералов</div>
+          <div className="text-2xl font-semibold text-white">{stats?.totalReferrals ?? 0}</div>
+        </div>
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+          <div className="text-sm text-slate-400">Конвертировано</div>
+          <div className="text-2xl font-semibold text-emerald-400">{stats?.convertedReferrals ?? 0}</div>
+        </div>
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+          <div className="text-sm text-slate-400">Конверсия</div>
+          <div className="text-2xl font-semibold text-blue-400">{stats?.conversionRate ?? 0}%</div>
+        </div>
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+          <div className="text-sm text-slate-400">Ожидают выплат</div>
+          <div className="text-2xl font-semibold text-yellow-400">
+            {Number(stats?.totalRewardsPending ?? 0).toLocaleString()}
+          </div>
+        </div>
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+          <div className="text-sm text-slate-400">Выплачено</div>
+          <div className="text-2xl font-semibold text-emerald-400">
+            {Number(stats?.totalRewardsPaid ?? 0).toLocaleString()}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-slate-400">Список рефералов</div>
         <select
           value={status}
           onChange={e => {
             setStatus(e.target.value);
-            setMeta(prev => ({ ...prev, page: 1 }));
+            setPage(1);
           }}
-          className="bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-400"
+          className="bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-400"
         >
-          <option value="">All Statuses</option>
+          <option value="">Все статусы</option>
           <option value="pending">Pending</option>
           <option value="converted">Converted</option>
         </select>
@@ -168,29 +190,28 @@ export function ReferralsPage() {
             </div>
 
             {referrals.length === 0 && (
-              <div className="text-center py-12 text-slate-400">No referrals found</div>
+              <div className="text-center py-12 text-slate-400">Нет данных для отображения</div>
             )}
 
-            {meta.totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t border-slate-700/50">
-                <div className="text-sm text-slate-400">
-                  Showing {(meta.page - 1) * meta.limit + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total}
-                </div>
-                <div className="flex items-center space-x-2">
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between p-4 text-sm text-slate-400">
+                <span>
+                  Страница {page} из {totalPages}
+                </span>
+                <div className="space-x-2">
                   <button
-                    onClick={() => setMeta(prev => ({ ...prev, page: prev.page - 1 }))}
-                    disabled={meta.page === 1}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg disabled:opacity-50"
+                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                    disabled={page === 1}
+                    className="px-3 py-1 rounded-md bg-slate-700/40 disabled:opacity-50"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    Назад
                   </button>
-                  <span className="text-slate-400">Page {meta.page} of {meta.totalPages}</span>
                   <button
-                    onClick={() => setMeta(prev => ({ ...prev, page: prev.page + 1 }))}
-                    disabled={meta.page === meta.totalPages}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg disabled:opacity-50"
+                    onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={page === totalPages}
+                    className="px-3 py-1 rounded-md bg-slate-700/40 disabled:opacity-50"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    Вперёд
                   </button>
                 </div>
               </div>

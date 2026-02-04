@@ -131,9 +131,55 @@
 ## 🛠 Установка и запуск
 
 ### Требования
-- Node.js 20+
-- Docker и Docker Compose
+- Node.js 20+ (рекомендуется 20.x LTS)
+- npm 9+
+- Docker и Docker Compose (рекомендуется)
 - Git
+
+## 📦 Полный список зависимостей
+
+### Системные зависимости
+- Node.js 18+ (рекомендуется 20.x)
+- npm 9+
+- PostgreSQL 15+
+- Redis 7+
+- Docker 20+ и Docker Compose 2+ (для контейнерного запуска)
+- Nginx (для production)
+
+### Backend зависимости (runtime)
+- @nestjs/axios, @nestjs/bull, @nestjs/common, @nestjs/config, @nestjs/core
+- @nestjs/event-emitter, @nestjs/jwt, @nestjs/passport, @nestjs/platform-express
+- @nestjs/schedule, @nestjs/swagger, @nestjs/terminus, @nestjs/throttler
+- @prisma/client, argon2, axios, bcrypt, bull, class-transformer, class-validator
+- cors, helmet, ioredis, joi, nanoid, otplib, passport, passport-jwt, passport-local
+- qrcode, reflect-metadata, rxjs, stripe, web-push
+
+### Backend зависимости (dev)
+- @nestjs/cli, @nestjs/schematics, @nestjs/testing
+- @types/bcrypt, @types/express, @types/jest, @types/multer, @types/node
+- @types/nodemailer, @types/passport-jwt, @types/passport-local, @types/qrcode
+- @types/uuid, @types/web-push
+- @typescript-eslint/eslint-plugin, @typescript-eslint/parser
+- eslint, jest, prisma, ts-jest, ts-node, typescript
+
+### Frontend зависимости (runtime)
+- axios, clsx, lucide-react, react, react-dom, react-router-dom, tailwind-merge
+
+### Frontend зависимости (dev)
+- @tailwindcss/postcss, @tailwindcss/vite, @types/node, @types/react, @types/react-dom
+- @vitejs/plugin-react, autoprefixer, postcss, tailwindcss, typescript
+- vite, vite-plugin-singlefile
+
+## 🧩 Скрипты установки и запуска
+
+| Скрипт | Назначение |
+|--------|------------|
+| `setup_script/install.sh` | Полная автоматическая установка (интерактивно) |
+| `setup_script/setup-git.sh` | Настройка git hooks и конфигурации |
+| `setup_script/dev.sh` | Быстрый запуск для разработки |
+| `setup_script/deploy.sh` | Production деплой через Docker |
+
+## ✅ Пошаговая инструкция по установке
 
 ### 1. Клонирование репозитория
 
@@ -152,7 +198,16 @@ cp .env.example .env
 nano .env
 ```
 
-### 3. Запуск через Docker (рекомендуется)
+### 3. (Рекомендуется) Автоматическая установка
+
+```bash
+./setup_script/install.sh
+```
+
+Скрипт проверит требования, создаст `.env`, сгенерирует JWT/VAPID ключи, установит зависимости,
+поднимет PostgreSQL/Redis через Docker и применит миграции Prisma.
+
+### 4. Запуск через Docker (ручной)
 
 ```bash
 # Запуск всех сервисов
@@ -165,7 +220,10 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### 4. Локальная разработка
+### 5. Локальная разработка (без Docker)
+
+> При локальной разработке убедитесь, что PostgreSQL и Redis запущены, а переменные
+> окружения (`DATABASE_URL`, `REDIS_HOST`, `REDIS_PORT`) указывают на локальные сервисы.
 
 ```bash
 # Backend
@@ -179,6 +237,17 @@ npm run start:dev
 cd frontend
 npm install
 npm run dev
+```
+
+### 5. Проверка запуска
+
+- Frontend: http://localhost:3001 (или порт, указанный Vite)
+- API: http://localhost:3000
+- MailHog (если используется через Docker): http://localhost:8025
+### 6. Быстрый старт для разработки (альтернатива)
+
+```bash
+./setup_script/dev.sh
 ```
 
 ## 🔧 Конфигурация
