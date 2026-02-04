@@ -69,6 +69,7 @@ services:
       WHATSAPP_API_URL: ${WHATSAPP_API_URL:-}
       WHATSAPP_API_TOKEN: ${WHATSAPP_API_TOKEN:-}
       WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      FRONTEND_URL: ${FRONTEND_URL:-https://ex.odineco.online}
     ports:
       - "${API_PORT:-3000}:3000"
     depends_on:
@@ -89,9 +90,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.odineco.online/api/v1}
     container_name: odin-frontend
-    environment:
-      NEXT_PUBLIC_API_URL: https://api.odineco.online/api/v1
     ports:
       - "${FRONTEND_PORT:-3001}:3000"
     depends_on:
