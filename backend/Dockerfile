@@ -23,6 +23,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
+# Install dependencies
+RUN npm install
 # Install dependencies (include Prisma CLI)
 RUN npm ci
 
@@ -40,6 +42,12 @@ RUN apk add --no-cache libc6-compat curl openssl
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install production dependencies only
+RUN npm install --omit=dev
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
