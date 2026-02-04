@@ -25,6 +25,7 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 
 $SUDO apt-get install -y nginx certbot python3-certbot-nginx
+$SUDO apt-get install -y build-essential ufw unzip
 
 if [[ ! -f .env ]]; then
   cp .env.example .env
