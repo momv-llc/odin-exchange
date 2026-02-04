@@ -40,7 +40,7 @@ COPY --from=builder /app/dist .
 # Создаём nginx конфиг для порта 3000
 RUN echo 'server { \
     listen 3000; \
-    server_name localhost; \
+    server_name localhost ex.odineco.online; \
     root /usr/share/nginx/html; \
     index index.html; \
     location / { \
