@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Loader2, Lock, Mail, Shield } from 'lucide-react';
+import { Loader2, Lock, Mail, Shield, Info } from 'lucide-react';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ export function LoginPage() {
   const [needs2FA, setNeeds2FA] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showDemoInfo, setShowDemoInfo] = useState(true);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +51,11 @@ export function LoginPage() {
     }
   };
 
+  const fillDemoCredentials = (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -60,6 +66,55 @@ export function LoginPage() {
           <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
           <p className="text-slate-400 mt-2">ODIN Exchange</p>
         </div>
+
+        {/* Demo Credentials Info */}
+        {showDemoInfo && (
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-3">
+                <Info className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-emerald-400 font-medium text-sm mb-2">Demo Credentials</p>
+                  <div className="space-y-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => fillDemoCredentials('admin@odin.exchange', 'admin123')}
+                      className="block w-full text-left text-slate-300 hover:text-emerald-400 transition-colors p-2 rounded bg-slate-800/50 hover:bg-slate-700/50"
+                    >
+                      <span className="font-medium">Super Admin:</span>
+                      <br />
+                      admin@odin.exchange / admin123
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fillDemoCredentials('operator@odin.exchange', 'operator123')}
+                      className="block w-full text-left text-slate-300 hover:text-emerald-400 transition-colors p-2 rounded bg-slate-800/50 hover:bg-slate-700/50"
+                    >
+                      <span className="font-medium">Operator:</span>
+                      <br />
+                      operator@odin.exchange / operator123
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fillDemoCredentials('demo@demo.com', 'demo')}
+                      className="block w-full text-left text-slate-300 hover:text-emerald-400 transition-colors p-2 rounded bg-slate-800/50 hover:bg-slate-700/50"
+                    >
+                      <span className="font-medium">Demo:</span>
+                      <br />
+                      demo@demo.com / demo
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDemoInfo(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-8">
           {error && (

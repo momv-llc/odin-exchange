@@ -1,52 +1,84 @@
-import { Injectable, OnModuleDestroy, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
 @Injectable()
-export class RedisService implements OnModuleDestroy {
+export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
-  private readonly client: Redis;
+  private client: Redis;
 
-  constructor(private readonly config: ConfigService) {
-    const isProduction = this.config.get('NODE_ENV') === 'production';
+  constructor(private configService: ConfigService) {
+    const host = this.configService.get('REDIS_HOST', 'localhost');
+    const port = this.configService.get('REDIS_PORT', 6379);
     
     this.client = new Redis({
-      host: this.config.get('REDIS_HOST', 'localhost'),
-      port: this.config.get('REDIS_PORT', 6379),
-      password: this.config.get('REDIS_PASSWORD') || undefined,
-      tls: isProduction ? {} : undefined, // Upstash требует TLS
-      maxRetriesPerRequest: 3,
+      host,
+      port: parseInt(port),
+      retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+      },
     });
-
-    this.client.on('connect', () => this.logger.log('Redis connected'));
-    this.client.on('error', (err) => this.logger.error('Redis error', err));
   }
 
-  getClient() { return this.client; }
-  async get<T>(key: string): Promise<T | null> {
-    const v = await this.client.get(key);
-    if (!v) return null;
-    try { return JSON.parse(v); } catch { return v as unknown as T; }
+  async onModuleInit() {
+    try {
+      await this.client.ping();
+      this.logger.log('Successfully connected to Redis');
+    } catch (error) {
+      this.logger.error('Failed to connect to Redis', error);
+    }
   }
-  async set(key: string, value: any, ttl?: number) {
-    const d = typeof value === 'string' ? value : JSON.stringify(value);
-    ttl ? await this.client.setex(key, ttl, d) : await this.client.set(key, d);
+
+  async onModuleDestroy() {
+    await this.client.quit();
   }
-  async del(key: string) { await this.client.del(key); }
-  async hset(key: string, field: string, value: any) {
-    await this.client.hset(key, field, typeof value === 'string' ? value : JSON.stringify(value));
+
+  getClient(): Redis {
+    return this.client;
   }
+
+  async get(key: string): Promise<string | null> {
+    return this.client.get(key);
+  }
+
+  async set(key: string, value: string, ttl?: number): Promise<void> {
+    if (ttl) {
+      await this.client.setex(key, ttl, value);
+    } else {
+      await this.client.set(key, value);
+    }
+  }
+
+  async del(key: string): Promise<void> {
+    await this.client.del(key);
+  }
+
+  async exists(key: string): Promise<boolean> {
+    const result = await this.client.exists(key);
+    return result === 1;
+  }
+
+  // Новые методы для работы с hash
+  async hset(key: string, field: string, value: any): Promise<void> {
+    await this.client.hset(key, field, JSON.stringify(value));
+  }
+
   async hget<T>(key: string, field: string): Promise<T | null> {
-    const v = await this.client.hget(key, field);
-    if (!v) return null;
-    try { return JSON.parse(v); } catch { return v as unknown as T; }
+    const value = await this.client.hget(key, field);
+    return value ? JSON.parse(value) : null;
   }
+
   async hgetall<T>(key: string): Promise<Record<string, T>> {
     const data = await this.client.hgetall(key);
-    const r: Record<string, T> = {};
-    for (const [f, v] of Object.entries(data)) { try { r[f] = JSON.parse(v); } catch { r[f] = v as unknown as T; } }
-    return r;
+    const result: Record<string, T> = {};
+    for (const [field, value] of Object.entries(data)) {
+      result[field] = JSON.parse(value);
+    }
+    return result;
   }
-  async expire(key: string, sec: number) { await this.client.expire(key, sec); }
-  async onModuleDestroy() { await this.client.quit(); }
+
+  async expire(key: string, seconds: number): Promise<void> {
+    await this.client.expire(key, seconds);
+  }
 }
