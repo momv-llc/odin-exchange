@@ -92,7 +92,7 @@ export class AdminKycController {
     @Req() req: any,
     @Body() body: { level?: KycLevel },
   ) {
-    return this.kycService.approveKyc(id, req.admin.id, body.level);
+    return this.kycService.approveKyc(id, req.user.id, body.level);
   }
 
   @Post(':id/reject')
@@ -101,7 +101,7 @@ export class AdminKycController {
     @Req() req: any,
     @Body() body: { reason: string },
   ) {
-    return this.kycService.rejectKyc(id, req.admin.id, body.reason);
+    return this.kycService.rejectKyc(id, req.user.id, body.reason);
   }
 
   @Post('document/:id/verify')

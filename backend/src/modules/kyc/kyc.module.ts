@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { KycService } from './kyc.service';
 import { KycController, AdminKycController } from './kyc.controller';
-import { PrismaModule } from '../../prisma/prisma.module';
+import { PrismaModule } from '@/core/database/prisma.module';
 
 @Module({
   imports: [

@@ -41,6 +41,6 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Create review as authenticated user' })
   async createAsUser(@Body() dto: CreateReviewDto, @Req() req: Request) {
     const ip = req.ip || req.socket.remoteAddress;
-    return this.reviewsService.create(dto, req.user['id'], ip);
+    return this.reviewsService.create(dto, req.user!.id, ip);
   }
 }
