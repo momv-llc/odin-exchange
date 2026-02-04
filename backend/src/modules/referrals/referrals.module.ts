@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ReferralsService } from './referrals.service';
 import { ReferralsController, AdminReferralsController } from './referrals.controller';
-import { PrismaModule } from '../../prisma/prisma.module';
+import { PrismaModule } from '@/core/database/prisma.module';
 
 @Module({
   imports: [PrismaModule],
