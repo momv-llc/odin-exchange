@@ -220,10 +220,48 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### 5. Локальная разработка (без Docker)
+### 3.1. Production деплой (Ubuntu 24.04 + Docker + TLS)
 
-> При локальной разработке убедитесь, что PostgreSQL и Redis запущены, а переменные
-> окружения (`DATABASE_URL`, `REDIS_HOST`, `REDIS_PORT`) указывают на локальные сервисы.
+> Пример рассчитан на домены `ex.odineco.online` (frontend) и `api.odineco.online` (backend).
+
+```bash
+# 1) Установите Docker и Compose plugin
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg lsb-release
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# 2) Клонируйте проект и подготовьте .env
+git clone <repository-url>
+cd odin-exchange
+cp .env.example .env
+nano .env
+
+# 3) Запустите сервисы
+docker compose up -d
+```
+
+```bash
+# 4) Установите и настройте Nginx reverse-proxy
+sudo apt install -y nginx
+sudo cp deploy/nginx/odin-exchange.conf /etc/nginx/sites-available/odin-exchange.conf
+sudo ln -s /etc/nginx/sites-available/odin-exchange.conf /etc/nginx/sites-enabled/odin-exchange.conf
+sudo nginx -t
+sudo systemctl reload nginx
+
+# 5) Получите TLS сертификаты (Let's Encrypt)
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d ex.odineco.online -d api.odineco.online
+```
+
+> После выпуска сертификатов Certbot автоматически добавит HTTPS-блоки в конфиг Nginx.
+
+### 4. Локальная разработка
 
 ```bash
 # Backend
@@ -309,7 +347,8 @@ VAPID_EMAIL=mailto:admin@odin-exchange.com
 
 # ============ Frontend ============
 FRONTEND_URL=http://localhost:3001
-VITE_API_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
+VITE_API_URL=http://localhost:3000/api/v1
 
 # ============ Rate Limiting ============
 THROTTLE_TTL=60
