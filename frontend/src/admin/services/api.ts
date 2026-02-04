@@ -75,6 +75,19 @@ class ApiService {
       throw new Error(getErrorMessage(payload));
     }
 
+
+    if (response.status === 401) {
+      this.setToken(null);
+      window.location.href = '/admin/login';
+      throw new Error('Unauthorized');
+    }
+
+    const payload = await response.json();
+
+    if (!response.ok) {
+      throw new Error(getErrorMessage(payload));
+    }
+
     return unwrap<T>(payload);
   }
 
@@ -196,6 +209,26 @@ class ApiService {
     return this.request<any>('/admin/promo/stats');
   }
 
+  // KYC
+  async getKycSubmissions(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/kyc${query ? `?${query}` : ''}`);
+  }
+
+  async getKycStats() {
+    return this.request<any>('/admin/kyc/stats');
+  }
+
+  // Referrals
+  async getReferrals(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/referrals${query ? `?${query}` : ''}`);
+  }
+
+  async getReferralStats() {
+    return this.request<any>('/admin/referrals/stats');
+  }
+
   async createPromo(data: any) {
     return this.request<any>('/admin/promo', {
       method: 'POST',
@@ -214,6 +247,24 @@ class ApiService {
     return this.request<any>(`/admin/promo/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // Locations
+  async getLocations(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/locations${query ? `?${query}` : ''}`);
+  }
+
+  async createLocation(data: any) {
+    return this.request<any>('/admin/locations', {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  async updateLocation(id: string, data: any) {
+    return this.request<any>(`/admin/locations/${id}`, {
+      method: 'PUT',
   }
 
   // Locations
@@ -279,6 +330,59 @@ class ApiService {
       method: 'PATCH',
       body: data,
     });
+  }
+
+  async deleteLocation(id: string) {
+    return this.request<any>(`/admin/locations/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Payment methods
+  async getPaymentMethods(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/payment-methods${query ? `?${query}` : ''}`);
+  }
+
+  async createPaymentMethod(data: any) {
+    return this.request<any>('/admin/payment-methods', {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  async updatePaymentMethod(id: string, data: any) {
+    return this.request<any>(`/admin/payment-methods/${id}`, {
+      method: 'PUT',
+      body: data,
+    });
+  }
+
+  async deletePaymentMethod(id: string) {
+    return this.request<any>(`/admin/payment-methods/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Transfers
+  async getTransfers(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/transfers${query ? `?${query}` : ''}`);
+  }
+
+  async updateTransferStatus(id: string, data: any) {
+    return this.request<any>(`/admin/transfers/${id}/status`, {
+      method: 'PATCH',
+      body: data,
+    });
+  // Audit log
+  async getAuditLogs(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/audit/logs${query ? `?${query}` : ''}`);
+  }
+
+  async getAuditAdmins() {
+    return this.request<any>('/admin/audit/admins');
   }
 }
 
