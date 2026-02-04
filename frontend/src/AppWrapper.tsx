@@ -10,6 +10,10 @@ import { KycVerification } from './pages/KycVerification';
 import { ReferralProgram } from './pages/ReferralProgram';
 import { AuthPage } from './pages/AuthPage';
 import { AccountPage } from './pages/AccountPage';
+import { Integrations } from './pages/Integrations';
+import { PaymentSystems } from './pages/PaymentSystems';
+import { AnalyticsInfo } from './pages/AnalyticsInfo';
+import { ExchangeRatesInfo } from './pages/ExchangeRatesInfo';
 import { TermsOfService } from './pages/Legall/Legal_TermsOfService';
 import { PrivacyPolicy } from './pages/Legall/Legal_PrivacyPolicy';
 import { AMLPolicy } from './pages/Legall/Legal_AMLPolicy';
@@ -42,6 +46,10 @@ function AppRoutes() {
       <Route path="/login" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="login" />} />
       <Route path="/register" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="register" />} />
       <Route path="/account" element={<AccountPage currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/integrations" element={<Integrations currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/payment-systems" element={<PaymentSystems currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/analytics" element={<AnalyticsInfo currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/exchange-rates" element={<ExchangeRatesInfo currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/markets" element={<Navigate to="/" replace />} />
       <Route path="/api" element={<Navigate to="/" replace />} />
       <Route path="/business" element={<Navigate to="/" replace />} />
