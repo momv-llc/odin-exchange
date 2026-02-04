@@ -38,7 +38,8 @@ function AppRoutes() {
       <Route path="/terms" element={<TermsOfService currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/privacy" element={<PrivacyPolicy currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/aml" element={<AMLPolicy currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
-      <Route path="/risk" element={<ExchangeRules currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/exchange-rules" element={<ExchangeRules currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/risk" element={<Navigate to="/exchange-rules" replace />} />
       <Route path="/login" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="login" />} />
       <Route path="/register" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="register" />} />
       <Route path="/account" element={<AccountPage currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
