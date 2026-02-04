@@ -3,6 +3,21 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
+interface PayPalAccessTokenResponse {
+  access_token: string;
+  expires_in: number;
+}
+
+interface PayPalOrderResponse {
+  id: string;
+  status: string;
+  links: Array<{ rel: string; href: string }>;
+}
+
+interface PayPalRefundResponse {
+  id: string;
+}
+
 @Injectable()
 export class PayPalService {
   private readonly logger = new Logger(PayPalService.name);
@@ -36,7 +51,7 @@ export class PayPalService {
     try {
       const auth = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
       const response = await firstValueFrom(
-        this.httpService.post(
+        this.httpService.post<PayPalAccessTokenResponse>(
           `${this.baseUrl}/v1/oauth2/token`,
           'grant_type=client_credentials',
           {
@@ -71,7 +86,7 @@ export class PayPalService {
     try {
       const token = await this.getAccessToken();
       const response = await firstValueFrom(
-        this.httpService.post(
+        this.httpService.post<PayPalOrderResponse>(
           `${this.baseUrl}/v2/checkout/orders`,
           {
             intent: 'CAPTURE',
@@ -119,7 +134,7 @@ export class PayPalService {
     const token = await this.getAccessToken();
     try {
       const response = await firstValueFrom(
-        this.httpService.post(
+        this.httpService.post<Record<string, unknown>>(
           `${this.baseUrl}/v2/checkout/orders/${orderId}/capture`,
           {},
           {
@@ -180,7 +195,7 @@ export class PayPalService {
     const token = await this.getAccessToken();
     try {
       const response = await firstValueFrom(
-        this.httpService.post(
+        this.httpService.post<PayPalRefundResponse>(
           `${this.baseUrl}/v2/payments/captures/${captureId}/refund`,
           {
             amount: {

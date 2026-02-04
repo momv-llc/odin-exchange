@@ -19,6 +19,11 @@ ARG VITE_API_URL
 
 ENV VITE_API_URL=${VITE_API_URL}
 
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
+# Copy built files
+COPY --from=builder /app/dist /usr/share/nginx/html
 # Собираем проект
 RUN npm run build
 
@@ -35,7 +40,7 @@ COPY --from=builder /app/dist .
 # Создаём nginx конфиг для порта 3000
 RUN echo 'server { \
     listen 3000; \
-    server_name localhost; \
+    server_name localhost ex.odineco.online; \
     root /usr/share/nginx/html; \
     index index.html; \
     location / { \

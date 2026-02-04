@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '@/core/database/prisma.service';
 import { CoinGeckoService } from './providers/coingecko.service';
 import { FixerService } from './providers/fixer.service';
 import { BinanceService } from './providers/binance.service';
