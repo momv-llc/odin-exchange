@@ -6,9 +6,10 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: 'login' | 'register';
+  onSuccess?: () => void;
 }
 
-export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthModalProps) {
   const { login, register } = useUserAuth();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(initialMode);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +43,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
       await login(email, password);
       onClose();
       resetForm();
+      onSuccess?.();
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
@@ -67,8 +69,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
 
     try {
       await register({ email, password, firstName, lastName });
-      setSuccess('Registration successful! Please check your email to verify your account.');
+      await login(email, password);
       resetForm();
+      onClose();
+      onSuccess?.();
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {

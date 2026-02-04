@@ -64,6 +64,7 @@ services:
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_FROM: noreply@odinexchange.com
+      FRONTEND_URL: ${FRONTEND_URL:-https://ex.odineco.online}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_ADMIN_CHAT_ID: ${TELEGRAM_ADMIN_CHAT_ID:-}
       WHATSAPP_API_URL: ${WHATSAPP_API_URL:-}
@@ -91,6 +92,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.odineco.online/api/v1}
+    container_name: odin-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.odineco.online/api/v1}
         VITE_API_URL: ${VITE_API_URL:-https://api.odineco.online/api/v1}
     container_name: odin-frontend
     ports:

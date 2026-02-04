@@ -128,8 +128,101 @@
 - ✅ Analytics
 - ✅ Exchange Rates
 
-## 🛠 Установка и запуск
+## 📦 Зависимости проекта
 
+Ниже перечислены **все зависимости**, указанные в `package.json` для backend и frontend, а также внешние сервисы, необходимые для работы.
+
+### Системные зависимости
+- Node.js 20+
+- Docker и Docker Compose (для контейнерного запуска)
+- PostgreSQL 15+
+- Redis 7+
+- Git
+
+### Backend (production dependencies)
+- @nestjs/axios
+- @nestjs/bull
+- @nestjs/common
+- @nestjs/config
+- @nestjs/core
+- @nestjs/event-emitter
+- @nestjs/jwt
+- @nestjs/passport
+- @nestjs/platform-express
+- @nestjs/schedule
+- @nestjs/swagger
+- @nestjs/terminus
+- @nestjs/throttler
+- @prisma/client
+- argon2
+- axios
+- bcrypt
+- bull
+- class-transformer
+- class-validator
+- cors
+- helmet
+- ioredis
+- joi
+- nanoid
+- otplib
+- passport
+- passport-jwt
+- passport-local
+- qrcode
+- reflect-metadata
+- rxjs
+- stripe
+- web-push
+
+### Backend (dev dependencies)
+- @nestjs/cli
+- @nestjs/schematics
+- @nestjs/testing
+- @types/bcrypt
+- @types/express
+- @types/jest
+- @types/multer
+- @types/node
+- @types/nodemailer
+- @types/passport-jwt
+- @types/passport-local
+- @types/qrcode
+- @types/uuid
+- @types/web-push
+- @typescript-eslint/eslint-plugin
+- @typescript-eslint/parser
+- eslint
+- jest
+- prisma
+- ts-jest
+- ts-node
+- typescript
+
+### Frontend (production dependencies)
+- axios
+- clsx
+- lucide-react
+- react
+- react-dom
+- react-router-dom
+- tailwind-merge
+
+### Frontend (dev dependencies)
+- @tailwindcss/postcss
+- @tailwindcss/vite
+- @types/node
+- @types/react
+- @types/react-dom
+- @vitejs/plugin-react
+- autoprefixer
+- postcss
+- tailwindcss
+- typescript
+- vite
+- vite-plugin-singlefile
+
+## 🛠 Установка и запуск
 ### Требования
 - Node.js 20+ (рекомендуется 20.x LTS)
 - npm 9+
@@ -220,10 +313,53 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### 5. Локальная разработка (без Docker)
+### 4. Локальная разработка (шаг за шагом)
 
-> При локальной разработке убедитесь, что PostgreSQL и Redis запущены, а переменные
-> окружения (`DATABASE_URL`, `REDIS_HOST`, `REDIS_PORT`) указывают на локальные сервисы.
+1) Поднимите PostgreSQL и Redis (например, локально или через Docker).
+2) Проверьте, что переменные `DATABASE_URL`, `REDIS_HOST`, `REDIS_PORT` и `JWT_*` в `.env` заполнены корректно.
+3) Установите зависимости и запустите backend:
+### 3.1. Production деплой (Ubuntu 24.04 + Docker + TLS)
+
+> Пример рассчитан на домены `ex.odineco.online` (frontend) и `api.odineco.online` (backend).
+
+```bash
+# 1) Установите Docker и Compose plugin
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg lsb-release
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# 2) Клонируйте проект и подготовьте .env
+git clone <repository-url>
+cd odin-exchange
+cp .env.example .env
+nano .env
+
+# 3) Запустите сервисы
+docker compose up -d
+```
+
+```bash
+# 4) Установите и настройте Nginx reverse-proxy
+sudo apt install -y nginx
+sudo cp deploy/nginx/odin-exchange.conf /etc/nginx/sites-available/odin-exchange.conf
+sudo ln -s /etc/nginx/sites-available/odin-exchange.conf /etc/nginx/sites-enabled/odin-exchange.conf
+sudo nginx -t
+sudo systemctl reload nginx
+
+# 5) Получите TLS сертификаты (Let's Encrypt)
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d ex.odineco.online -d api.odineco.online
+```
+
+> После выпуска сертификатов Certbot автоматически добавит HTTPS-блоки в конфиг Nginx.
+
+### 4. Локальная разработка
 
 ```bash
 # Backend
@@ -232,7 +368,11 @@ npm install
 npx prisma generate
 npx prisma migrate dev
 npm run start:dev
+```
 
+4) В отдельном терминале установите зависимости и запустите frontend:
+
+```bash
 # Frontend (в отдельном терминале)
 cd frontend
 npm install
@@ -309,7 +449,8 @@ VAPID_EMAIL=mailto:admin@odin-exchange.com
 
 # ============ Frontend ============
 FRONTEND_URL=http://localhost:3001
-VITE_API_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
+VITE_API_URL=http://localhost:3000/api/v1
 
 # ============ Rate Limiting ============
 THROTTLE_TTL=60
