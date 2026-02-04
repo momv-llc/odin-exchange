@@ -1,22 +1,45 @@
-import { randomBytes, createHmac, timingSafeEqual } from 'crypto';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CodeGenerator {
-  private readonly ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  private readonly secret: string;
-  constructor(config: ConfigService) { this.secret = config.get('CODE_HMAC_SECRET') || 'default'; }
-  generate() {
-    const bytes = randomBytes(12);
-    let code = '';
-    for (let i = 0; i < bytes.length; i++) code += this.ALPHABET[bytes[i] % this.ALPHABET.length];
-    const formatted = `ODIN-${code.slice(0, 6)}-${code.slice(6)}`;
-    return { code: formatted, checksum: this.checksum(formatted) };
+  /**
+   * Generate a random alphanumeric code
+   */
+  static generate(length: number = 8, prefix: string = ''): string {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = prefix;
+    
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    
+    return result;
   }
-  validate(code: string, checksum: string) {
-    try { return timingSafeEqual(Buffer.from(checksum, 'hex'), Buffer.from(this.checksum(code), 'hex')); }
-    catch { return false; }
+
+  /**
+   * Generate a numeric code
+   */
+  static generateNumeric(length: number = 6): string {
+    const min = Math.pow(10, length - 1);
+    const max = Math.pow(10, length) - 1;
+    return Math.floor(min + Math.random() * (max - min + 1)).toString();
   }
-  private checksum(code: string) { return createHmac('sha256', this.secret).update(code).digest('hex').slice(0, 8); }
+
+  /**
+   * Generate order code with prefix
+   */
+  static generateOrderCode(): string {
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const random = this.generate(4);
+    return `ORD-${timestamp}-${random}`;
+  }
+
+  /**
+   * Generate transaction code
+   */
+  static generateTransactionCode(): string {
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const random = this.generate(6);
+    return `TXN-${timestamp}-${random}`;
+  }
 }

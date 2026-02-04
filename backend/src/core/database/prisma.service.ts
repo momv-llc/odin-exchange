@@ -4,6 +4,30 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
-  async onModuleInit() { await this.$connect(); this.logger.log('Database connected'); }
-  async onModuleDestroy() { await this.$disconnect(); }
+
+  constructor() {
+    super({
+      log: ['error', 'warn'],
+    });
+  }
+
+  async onModuleInit() {
+    try {
+      await this.$connect();
+      this.logger.log('Successfully connected to database');
+    } catch (error) {
+      this.logger.error('Failed to connect to database', error);
+      throw error;
+    }
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+
+  async enableShutdownHooks(app: any) {
+    this.$on('beforeExit' as never, async () => {
+      await app.close();
+    });
+  }
 }

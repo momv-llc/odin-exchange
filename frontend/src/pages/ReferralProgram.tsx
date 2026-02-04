@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api/client';
 
 interface ReferralStats {
   referralCode: string | null;
@@ -21,8 +21,9 @@ export function ReferralProgram() {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get('/api/referrals/stats');
-      setStats(res.data);
+      const res = await api.get('/referrals/stats');
+      const data = res.data?.data ?? res.data;
+      setStats(data);
     } catch (error) {
       console.error('Failed to fetch referral data:', error);
     } finally {
@@ -32,12 +33,12 @@ export function ReferralProgram() {
 
   const generateCode = async () => {
     try {
-      const res = await axios.post('/api/referrals/generate-code');
-      const code = res.data;
-      setStats(prev => prev ? { 
-        ...prev, 
-        referralCode: code, 
-        referralLink: window.location.origin + '?ref=' + code 
+      const res = await api.post('/referrals/generate-code');
+      const code = res.data?.data ?? res.data;
+      setStats(prev => prev ? {
+        ...prev,
+        referralCode: code,
+        referralLink: window.location.origin + '?ref=' + code
       } : null);
     } catch (error) {
       console.error('Failed to generate code:', error);
@@ -83,7 +84,7 @@ export function ReferralProgram() {
 
       <div className="bg-slate-800/50 rounded-lg p-6 mb-8 border border-slate-700">
         <h2 className="text-xl font-semibold mb-4 text-white">Ваша реферальная ссылка</h2>
-        
+
         {stats?.referralCode ? (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -118,24 +119,24 @@ export function ReferralProgram() {
         <h2 className="text-xl font-semibold mb-4">Как это работает</h2>
         <div className="grid md:grid-cols-3 gap-6">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">1</div>
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">1</div>
             <div>
-              <div className="font-medium">Поделитесь ссылкой</div>
-              <div className="text-sm text-white/80">Отправьте вашу реферальную ссылку друзьям</div>
+              <div className="font-semibold mb-1">Поделитесь ссылкой</div>
+              <div className="text-sm text-white/80">Отправьте ссылку друзьям и партнёрам</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">2</div>
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">2</div>
             <div>
-              <div className="font-medium">Они регистрируются</div>
-              <div className="text-sm text-white/80">Друг создает аккаунт и совершает обмен</div>
+              <div className="font-semibold mb-1">Они регистрируются</div>
+              <div className="text-sm text-white/80">Пользователи получают бонусы, а вы — комиссию</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">3</div>
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">3</div>
             <div>
-              <div className="font-medium">Получите награду</div>
-              <div className="text-sm text-white/80">Вы получаете 5% от комиссии каждой их сделки</div>
+              <div className="font-semibold mb-1">Получайте вознаграждение</div>
+              <div className="text-sm text-white/80">Начисления автоматически поступают на ваш счёт</div>
             </div>
           </div>
         </div>
