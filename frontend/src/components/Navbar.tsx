@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { ComponentType, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Language, translations, TranslationKey } from '../translations';
+import { Menu, X, Globe, Shield, Zap, UserCheck, Gift } from 'lucide-react';
 import { Menu, X, Globe, Shield, Zap, TrendingUp } from 'lucide-react';
 import { AuthModal, ProfileModal, useUserAuth } from '../auth';
 
 interface NavbarProps {
   currentLang: Language;
   setCurrentLang: (lang: Language) => void;
+  AuthButtons?: ComponentType;
 }
 
-export function Navbar({ currentLang, setCurrentLang }: NavbarProps) {
+export function Navbar({ currentLang, setCurrentLang, AuthButtons }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -21,9 +23,10 @@ export function Navbar({ currentLang, setCurrentLang }: NavbarProps) {
 
   const navigation = [
     { name: t('exchange'), href: '/', icon: Zap },
-    { name: t('markets'), href: '/markets', icon: TrendingUp },
     { name: t('reviews'), href: '/reviews', icon: Shield },
     { name: t('trackRequest'), href: '/track', icon: Globe },
+    { name: t('kyc'), href: '/kyc', icon: UserCheck },
+    { name: t('referrals'), href: '/referrals', icon: Gift },
   ];
 
   const isActive = (path: string) => {
@@ -112,6 +115,16 @@ export function Navbar({ currentLang, setCurrentLang }: NavbarProps) {
               <option value="ru">RU</option>
               <option value="ua">UA</option>
             </select>
+            {AuthButtons ? (
+              <AuthButtons />
+            ) : (
+              <Link 
+                to="/account"
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium transition-colors"
+              >
+                {t('login')}
+              </Link>
+            )}
             {renderAuthButton()}
           </div>
 
@@ -158,6 +171,18 @@ export function Navbar({ currentLang, setCurrentLang }: NavbarProps) {
                 <option value="ru">RU</option>
                 <option value="ua">UA</option>
               </select>
+              {AuthButtons ? (
+                <div onClick={() => setIsMenuOpen(false)} className="flex justify-center">
+                  <AuthButtons />
+                </div>
+              ) : (
+                <Link 
+                  to="/account"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full block text-center px-4 py-3 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium transition-colors"
+                >
+                  {t('login')}
+                </Link>
               {isAuthenticated && user ? (
                 <button
                   onClick={() => {
