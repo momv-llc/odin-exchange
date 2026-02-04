@@ -75,19 +75,6 @@ class ApiService {
       throw new Error(getErrorMessage(payload));
     }
 
-
-    if (response.status === 401) {
-      this.setToken(null);
-      window.location.href = '/admin/login';
-      throw new Error('Unauthorized');
-    }
-
-    const payload = await response.json();
-
-    if (!response.ok) {
-      throw new Error(getErrorMessage(payload));
-    }
-
     return unwrap<T>(payload);
   }
 

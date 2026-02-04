@@ -52,7 +52,7 @@ async function bootstrap() {
     .setDescription('API documentation for Odin Exchange')
     .setVersion('1.0')
     .addBearerAuth()
-    .addServer('https://api.odineco.online', 'Production')
+    .addServer('https://api.odineco.pro', 'Production')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -71,4 +71,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-
