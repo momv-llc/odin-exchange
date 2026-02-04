@@ -1,6 +1,13 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '@/core/database/prisma.service';
 import { nanoid } from 'nanoid';
+
+type ReferralWithReferred = {
+  referred: {
+    email: string;
+    createdAt: Date;
+  };
+};
 
 @Injectable()
 export class ReferralsService {
@@ -166,7 +173,7 @@ export class ReferralsService {
     ]);
 
     // Mask emails for privacy
-    const maskedReferrals = referrals.map(r => ({
+    const maskedReferrals = (referrals as ReferralWithReferred[]).map(r => ({
       ...r,
       referred: {
         email: this.maskEmail(r.referred.email),

@@ -1,10 +1,29 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 interface RequestOptions {
   method?: string;
   body?: any;
   headers?: Record<string, string>;
 }
+
+interface ApiErrorPayload {
+  message?: string | string[];
+  error?: string;
+}
+
+const unwrap = <T>(payload: any): T => {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return payload.data as T;
+  }
+  return payload as T;
+};
+
+const getErrorMessage = (payload: ApiErrorPayload) => {
+  if (Array.isArray(payload?.message)) {
+    return payload.message.join(', ');
+  }
+  return payload?.message || payload?.error || 'Request failed';
+};
 
 class ApiService {
   private token: string | null = null;
@@ -50,16 +69,16 @@ class ApiService {
       throw new Error('Unauthorized');
     }
 
-    const data = await response.json();
+    const payload = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || 'Request failed');
+      throw new Error(getErrorMessage(payload));
     }
 
-    return data;
+    return unwrap<T>(payload);
   }
 
-  // Auth
+  // Auth endpoints
   async login(email: string, password: string) {
     return this.request<any>('/admin/auth/login', {
       method: 'POST',
@@ -68,9 +87,9 @@ class ApiService {
   }
 
   async verify2FA(tempToken: string, code: string) {
-    this.setToken(tempToken);
     return this.request<any>('/admin/auth/2fa/verify', {
       method: 'POST',
+      headers: { Authorization: `Bearer ${tempToken}` },
       body: { code },
     });
   }
@@ -79,15 +98,28 @@ class ApiService {
     return this.request<any>('/admin/auth/me');
   }
 
+  async setup2FA() {
+    return this.request<any>('/admin/auth/2fa/setup', {
+      method: 'POST',
+    });
+  }
+
+  async confirm2FA(code: string) {
+    return this.request<any>('/admin/auth/2fa/confirm', {
+      method: 'POST',
+      body: { code },
+    });
+  }
+
   // Dashboard
-  async getDashboard(period: string = '24h') {
+  async getDashboardStats(period: string = '24h') {
     return this.request<any>(`/admin/dashboard?period=${period}`);
   }
 
   // Orders
-  async getOrders(params: Record<string, any> = {}) {
+  async getOrders(params: any = {}) {
     const query = new URLSearchParams(params).toString();
-    return this.request<any>(`/admin/orders?${query}`);
+    return this.request<any>(`/admin/orders${query ? `?${query}` : ''}`);
   }
 
   async getOrder(id: string) {
@@ -98,6 +130,10 @@ class ApiService {
     return this.request<any>(`/admin/orders/${id}/approve`, { method: 'PATCH' });
   }
 
+  async completeOrder(id: string) {
+    return this.request<any>(`/admin/orders/${id}/complete`, { method: 'PATCH' });
+  }
+
   async rejectOrder(id: string, reason: string) {
     return this.request<any>(`/admin/orders/${id}/reject`, {
       method: 'PATCH',
@@ -105,35 +141,31 @@ class ApiService {
     });
   }
 
-  async completeOrder(id: string) {
-    return this.request<any>(`/admin/orders/${id}/complete`, { method: 'PATCH' });
-  }
-
   // Users
-  async getUsers(params: Record<string, any> = {}) {
+  async getUsers(params: any = {}) {
     const query = new URLSearchParams(params).toString();
-    return this.request<any>(`/admin/users?${query}`);
-  }
-
-  async getUser(id: string) {
-    return this.request<any>(`/admin/users/${id}`);
+    return this.request<any>(`/admin/users${query ? `?${query}` : ''}`);
   }
 
   async getUserStats() {
     return this.request<any>('/admin/users/stats');
   }
 
-  async updateUserStatus(id: string, status: string, reason?: string) {
+  async getUser(id: string) {
+    return this.request<any>(`/admin/users/${id}`);
+  }
+
+  async updateUserStatus(id: string, status: string) {
     return this.request<any>(`/admin/users/${id}/status`, {
       method: 'PATCH',
-      body: { status, reason },
+      body: { status },
     });
   }
 
   // Reviews
-  async getReviews(params: Record<string, any> = {}) {
+  async getReviews(params: any = {}) {
     const query = new URLSearchParams(params).toString();
-    return this.request<any>(`/admin/reviews?${query}`);
+    return this.request<any>(`/admin/reviews${query ? `?${query}` : ''}`);
   }
 
   async getReviewStats() {
@@ -147,7 +179,7 @@ class ApiService {
     });
   }
 
-  async rejectReview(id: string, notes: string) {
+  async rejectReview(id: string, notes?: string) {
     return this.request<any>(`/admin/reviews/${id}/reject`, {
       method: 'PATCH',
       body: { notes },
@@ -155,9 +187,9 @@ class ApiService {
   }
 
   // Promo
-  async getPromos(params: Record<string, any> = {}) {
+  async getPromos(params: any = {}) {
     const query = new URLSearchParams(params).toString();
-    return this.request<any>(`/admin/promo?${query}`);
+    return this.request<any>(`/admin/promo${query ? `?${query}` : ''}`);
   }
 
   async getPromoStats() {
@@ -173,13 +205,80 @@ class ApiService {
 
   async updatePromo(id: string, data: any) {
     return this.request<any>(`/admin/promo/${id}`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: data,
     });
   }
 
   async deletePromo(id: string) {
-    return this.request<any>(`/admin/promo/${id}`, { method: 'DELETE' });
+    return this.request<any>(`/admin/promo/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Locations
+  async getLocations(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/locations${query ? `?${query}` : ''}`);
+  }
+
+  async createLocation(data: any) {
+    return this.request<any>('/admin/locations', {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  async updateLocation(id: string, data: any) {
+    return this.request<any>(`/admin/locations/${id}`, {
+      method: 'PUT',
+      body: data,
+    });
+  }
+
+  async deleteLocation(id: string) {
+    return this.request<any>(`/admin/locations/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Payment methods
+  async getPaymentMethods(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/payment-methods${query ? `?${query}` : ''}`);
+  }
+
+  async createPaymentMethod(data: any) {
+    return this.request<any>('/admin/payment-methods', {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  async updatePaymentMethod(id: string, data: any) {
+    return this.request<any>(`/admin/payment-methods/${id}`, {
+      method: 'PUT',
+      body: data,
+    });
+  }
+
+  async deletePaymentMethod(id: string) {
+    return this.request<any>(`/admin/payment-methods/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Transfers
+  async getTransfers(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/transfers${query ? `?${query}` : ''}`);
+  }
+
+  async updateTransferStatus(id: string, data: any) {
+    return this.request<any>(`/admin/transfers/${id}/status`, {
+      method: 'PATCH',
+      body: data,
+    });
   }
 }
 

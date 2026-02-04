@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.odineco.online/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -15,7 +15,7 @@ api.interceptors.request.use(
   (config) => {
     // Add auth token if available
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('user_access_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -37,7 +37,7 @@ api.interceptors.response.use(
       status: error.response?.status,
       message: error.message,
     });
-    
+
     return Promise.reject(error);
   }
 );
