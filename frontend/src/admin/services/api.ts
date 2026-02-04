@@ -196,6 +196,26 @@ class ApiService {
     return this.request<any>('/admin/promo/stats');
   }
 
+  // KYC
+  async getKycSubmissions(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/kyc${query ? `?${query}` : ''}`);
+  }
+
+  async getKycStats() {
+    return this.request<any>('/admin/kyc/stats');
+  }
+
+  // Referrals
+  async getReferrals(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/referrals${query ? `?${query}` : ''}`);
+  }
+
+  async getReferralStats() {
+    return this.request<any>('/admin/referrals/stats');
+  }
+
   async createPromo(data: any) {
     return this.request<any>('/admin/promo', {
       method: 'POST',
