@@ -14,6 +14,27 @@ FROM prisma AS builder
 COPY . .
 RUN npm run build
 
+# Migrations stage
+FROM node:20-alpine AS migrations
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies (include Prisma CLI)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Production stage
+FROM node:20-alpine AS production
+
 FROM node:20-alpine AS runner
 RUN apk add --no-cache libc6-compat curl openssl
 WORKDIR /app
@@ -22,6 +43,12 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
+# Copy built application
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget
 RUN mkdir -p /app/uploads/kyc && \
     chown -R nestjs:nodejs /app/uploads
 
