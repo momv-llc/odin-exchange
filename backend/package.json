@@ -31,6 +31,7 @@
     "@nestjs/throttler": "^5.1.1",
     "@prisma/client": "^5.8.0",
     "argon2": "^0.31.2",
+    "axios": "^1.7.9",
     "axios": "^1.6.5",
     "bcrypt": "^5.1.1",
     "bull": "^4.12.0",
@@ -48,6 +49,9 @@
     "qrcode": "^1.5.3",
     "reflect-metadata": "^0.1.14",
     "rxjs": "^7.8.1",
+    "stripe": "^14.25.0",
+    "uuid": "^9.0.0",
+    "web-push": "^3.6.7"
     "stripe": "^14.12.0",
     "web-push": "^3.6.6"
   },
