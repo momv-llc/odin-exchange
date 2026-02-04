@@ -106,6 +106,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: migrations
     container_name: odin-migrations
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-odin_exchange}?schema=public

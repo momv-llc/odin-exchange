@@ -19,6 +19,24 @@ RUN npx prisma generate
 # Build application
 RUN npm run build
 
+# Migrations stage
+FROM node:20-alpine AS migrations
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies (include Prisma CLI)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
 # Production stage
 FROM node:20-alpine AS production
 
@@ -35,8 +53,8 @@ RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Generate Prisma client in production
-RUN npx prisma generate
+# Install wget for healthcheck
+RUN apk add --no-cache wget
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
