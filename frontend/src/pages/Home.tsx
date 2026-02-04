@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { ComponentType, useEffect, useState } from 'react';
 import { Language } from '../translations';
 import { ExchangeWidget } from '../components/ExchangeWidget';
+import { RateHistoryChart } from '../components/RateHistoryChart';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { TrendingUp, Shield, Zap, Users, ArrowRight, Star, ChevronRight, Globe, Clock, Award } from 'lucide-react';
@@ -17,9 +18,10 @@ interface Currency {
 interface HomeProps {
   currentLang: Language;
   setCurrentLang: (lang: Language) => void;
+  AuthButtons?: ComponentType;
 }
 
-export function Home({ currentLang, setCurrentLang }: HomeProps) {
+export function Home({ currentLang, setCurrentLang, AuthButtons }: HomeProps) {
   const [currencies, setCurrencies] = useState<Currency[]>([
     { symbol: 'BTC', name: 'Bitcoin', price: 43250.50, change: 2.34, icon: '₿', volume: '$28.5B' },
     { symbol: 'ETH', name: 'Ethereum', price: 2280.75, change: -1.23, icon: 'Ξ', volume: '$15.2B' },
@@ -87,7 +89,7 @@ export function Home({ currentLang, setCurrentLang }: HomeProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <Navbar currentLang={currentLang} setCurrentLang={setCurrentLang} />
+      <Navbar currentLang={currentLang} setCurrentLang={setCurrentLang} AuthButtons={AuthButtons} />
       
       <main>
         {/* Hero Section */}
@@ -205,6 +207,10 @@ export function Home({ currentLang, setCurrentLang }: HomeProps) {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <div className="mt-10">
+              <RateHistoryChart baseCurrency="BTC" quoteCurrency="USDT" interval="1h" limit={48} />
             </div>
           </div>
         </section>

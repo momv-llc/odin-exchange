@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { PrismaService } from '@/core/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -248,6 +250,16 @@ export class CryptoPaymentService {
             : undefined,
         },
       });
+    }
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async handlePendingPaymentsCron() {
+    try {
+      await this.monitorPendingPayments();
+    } catch (error) {
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error('Failed to monitor pending crypto payments.', stack);
     }
   }
 

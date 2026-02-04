@@ -1,3 +1,4 @@
+// Use the real API base URL for auth/profile flows (with local fallback).
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 interface RequestOptions {
@@ -84,6 +85,17 @@ class UserApiService {
         };
         response = await fetch(`${API_BASE}${endpoint}`, config);
       }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Request failed');
+      }
+
+      return data;
+    } catch (error: any) {
+      throw error;
+    }
     }
 
     if (response.status === 401) {
