@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '@/core/database/prisma.service';
 import { StripeService } from './providers/stripe.service';
 import { PayPalService } from './providers/paypal.service';
 import { CryptoPaymentService } from './providers/crypto-payment.service';
@@ -119,6 +119,9 @@ export class PaymentsService {
 
     switch (gateway) {
       case PaymentGateway.STRIPE:
+        if (!signature) {
+          throw new BadRequestException('Missing Stripe signature');
+        }
         return this.stripe.handleWebhook(payload, signature);
       case PaymentGateway.PAYPAL:
         return this.paypal.handleWebhook(payload);

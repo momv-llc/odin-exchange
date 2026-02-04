@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api/client';
 
 type KycStatus = 'NOT_STARTED' | 'PENDING' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED';
 
@@ -34,21 +34,22 @@ export function KycVerification() {
 
   const fetchKycStatus = async () => {
     try {
-      const res = await axios.get('/api/kyc/status');
-      setKycData(res.data);
-      if (res.data.firstName) {
+      const res = await api.get('/kyc/status');
+      const data = res.data?.data ?? res.data;
+      setKycData(data);
+      if (data.firstName) {
         setFormData({
-          firstName: res.data.firstName || '', lastName: res.data.lastName || '',
-          middleName: res.data.middleName || '',
-          dateOfBirth: res.data.dateOfBirth?.split('T')[0] || '',
-          nationality: res.data.nationality || '',
-          countryOfResidence: res.data.countryOfResidence || '',
-          address: res.data.address || '', city: res.data.city || '',
-          postalCode: res.data.postalCode || '',
+          firstName: data.firstName || '', lastName: data.lastName || '',
+          middleName: data.middleName || '',
+          dateOfBirth: data.dateOfBirth?.split('T')[0] || '',
+          nationality: data.nationality || '',
+          countryOfResidence: data.countryOfResidence || '',
+          address: data.address || '', city: data.city || '',
+          postalCode: data.postalCode || '',
         });
       }
-      if (res.data.status === 'NOT_STARTED') setStep(1);
-      else if (res.data.documents.length < 2) setStep(2);
+      if (data.status === 'NOT_STARTED') setStep(1);
+      else if (data.documents.length < 2) setStep(2);
       else setStep(3);
     } catch (error) { console.error(error); } finally { setLoading(false); }
   };
@@ -57,7 +58,7 @@ export function KycVerification() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await axios.post('/api/kyc/submit', formData);
+      await api.post('/kyc/submit', formData);
       setStep(2);
       fetchKycStatus();
     } catch (error: any) {
@@ -73,7 +74,7 @@ export function KycVerification() {
     fd.append('type', selectedDocType);
     setSubmitting(true);
     try {
-      await axios.post('/api/kyc/document', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await api.post('/kyc/document', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       fetchKycStatus();
     } catch (error: any) { alert(error.response?.data?.message || 'Error'); }
     finally { setSubmitting(false); }
@@ -82,7 +83,7 @@ export function KycVerification() {
   const handleSubmitForReview = async () => {
     setSubmitting(true);
     try {
-      await axios.post('/api/kyc/submit-for-review');
+      await api.post('/kyc/submit-for-review');
       fetchKycStatus();
     } catch (error: any) { alert(error.response?.data?.message || 'Error'); }
     finally { setSubmitting(false); }
@@ -120,84 +121,145 @@ export function KycVerification() {
         </div>
       )}
 
-      {(status === 'NOT_STARTED' || status === 'PENDING' || status === 'REJECTED') && (
-        <>
-          <div className="flex items-center justify-between mb-8">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${step >= s ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'}`}>{s}</div>
-                {s < 3 && <div className={`w-24 h-1 mx-2 ${step > s ? 'bg-emerald-600' : 'bg-slate-700'}`} />}
-              </div>
-            ))}
+      {step === 1 && (
+        <form onSubmit={handleSubmitPersonalInfo} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Имя"
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              className="bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Фамилия"
+              value={formData.lastName}
+              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              className="bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+              required
+            />
           </div>
+          <input
+            type="text"
+            placeholder="Отчество"
+            value={formData.middleName}
+            onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+            className="w-full bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+          />
+          <input
+            type="date"
+            value={formData.dateOfBirth}
+            onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+            className="w-full bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+            required
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Гражданство"
+              value={formData.nationality}
+              onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+              className="bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Страна проживания"
+              value={formData.countryOfResidence}
+              onChange={(e) => setFormData({ ...formData, countryOfResidence: e.target.value })}
+              className="bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+              required
+            />
+          </div>
+          <input
+            type="text"
+            placeholder="Адрес"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            className="w-full bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+            required
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Город"
+              value={formData.city}
+              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              className="bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Почтовый индекс"
+              value={formData.postalCode}
+              onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+              className="bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
+          >
+            {submitting ? 'Отправка...' : 'Сохранить и продолжить'}
+          </button>
+        </form>
+      )}
 
-          {step === 1 && (
-            <form onSubmit={handleSubmitPersonalInfo} className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <h2 className="text-xl font-semibold mb-6 text-white">Личные данные</h2>
-              <div className="grid gap-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input type="text" required placeholder="Имя" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="p-3 bg-slate-700 border border-slate-600 rounded-lg text-white" />
-                  <input type="text" required placeholder="Фамилия" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="p-3 bg-slate-700 border border-slate-600 rounded-lg text-white" />
-                </div>
-                <input type="date" required value={formData.dateOfBirth} onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })} className="p-3 bg-slate-700 border border-slate-600 rounded-lg text-white" />
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input type="text" required placeholder="Гражданство (RU)" maxLength={3} value={formData.nationality} onChange={(e) => setFormData({ ...formData, nationality: e.target.value.toUpperCase() })} className="p-3 bg-slate-700 border border-slate-600 rounded-lg text-white" />
-                  <input type="text" required placeholder="Страна проживания" maxLength={3} value={formData.countryOfResidence} onChange={(e) => setFormData({ ...formData, countryOfResidence: e.target.value.toUpperCase() })} className="p-3 bg-slate-700 border border-slate-600 rounded-lg text-white" />
-                </div>
-                <input type="text" required placeholder="Адрес" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="p-3 bg-slate-700 border border-slate-600 rounded-lg text-white" />
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input type="text" required placeholder="Город" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="p-3 bg-slate-700 border border-slate-600 rounded-lg text-white" />
-                  <input type="text" required placeholder="Индекс" value={formData.postalCode} onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })} className="p-3 bg-slate-700 border border-slate-600 rounded-lg text-white" />
-                </div>
-              </div>
-              <button type="submit" disabled={submitting} className="mt-6 w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">{submitting ? 'Сохранение...' : 'Продолжить'}</button>
-            </form>
-          )}
-
-          {step === 2 && (
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <h2 className="text-xl font-semibold mb-6 text-white">Загрузка документов</h2>
-              <select value={selectedDocType} onChange={(e) => setSelectedDocType(e.target.value)} className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white mb-4">
-                <option value="PASSPORT">Паспорт</option>
-                <option value="ID_CARD">ID карта</option>
-                <option value="SELFIE">Селфи с документом</option>
-              </select>
-              <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center cursor-pointer hover:border-emerald-500 transition">
-                <input ref={fileInputRef} type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
-                <div className="text-slate-400">Нажмите для загрузки (PNG, JPG, PDF до 10MB)</div>
-              </div>
-              <div className="mt-4 space-y-2">
-                {kycData?.documents.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 bg-slate-700 rounded-lg">
-                    <span className="text-white">{doc.type}</span>
-                    <span className="text-sm text-slate-400">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+      {step === 2 && (
+        <div className="space-y-6">
+          <div className="text-slate-400">Загрузите документы (минимум 2 файла)</div>
+          <div className="flex items-center gap-4">
+            <select
+              value={selectedDocType}
+              onChange={(e) => setSelectedDocType(e.target.value)}
+              className="bg-slate-800 text-white rounded-lg p-3 border border-slate-700"
+            >
+              <option value="PASSPORT">Паспорт</option>
+              <option value="ID_CARD">ID карта</option>
+              <option value="DRIVERS_LICENSE">Водительские права</option>
+            </select>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={submitting}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
+            >
+              {submitting ? 'Загрузка...' : 'Выбрать файл'}
+            </button>
+          </div>
+          {kycData?.documents.length ? (
+            <div className="space-y-2">
+              {kycData.documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between bg-slate-800/50 p-3 rounded-lg">
+                  <div className="text-white">{doc.type}</div>
+                  <div className={doc.isVerified ? 'text-green-400' : 'text-yellow-400'}>
+                    {doc.isVerified ? 'Подтверждено' : 'На проверке'}
                   </div>
-                ))}
-              </div>
-              <div className="flex gap-4 mt-6">
-                <button onClick={() => setStep(1)} className="flex-1 py-3 border border-slate-600 text-white rounded-lg hover:bg-slate-700">Назад</button>
-                <button onClick={() => setStep(3)} disabled={(kycData?.documents?.length || 0) < 2} className="flex-1 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">Продолжить</button>
-              </div>
+                </div>
+              ))}
             </div>
-          )}
+          ) : null}
+          <button
+            onClick={handleSubmitForReview}
+            disabled={submitting || (kycData?.documents.length ?? 0) < 2}
+            className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
+          >
+            Отправить на проверку
+          </button>
+        </div>
+      )}
 
-          {step === 3 && (
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <h2 className="text-xl font-semibold mb-6 text-white">Проверка и отправка</h2>
-              <div className="p-4 bg-slate-700 rounded-lg mb-4">
-                <div className="text-white">{formData.firstName} {formData.lastName}</div>
-                <div className="text-slate-400">{formData.city}, {formData.countryOfResidence}</div>
-              </div>
-              <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg mb-6 text-yellow-400 text-sm">
-                Нажимая "Отправить", вы подтверждаете достоверность данных.
-              </div>
-              <div className="flex gap-4">
-                <button onClick={() => setStep(2)} className="flex-1 py-3 border border-slate-600 text-white rounded-lg">Назад</button>
-                <button onClick={handleSubmitForReview} disabled={submitting} className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">{submitting ? 'Отправка...' : 'Отправить на проверку'}</button>
-              </div>
-            </div>
-          )}
-        </>
+      {step === 3 && (
+        <div className="text-center text-slate-300">Ваши документы отправлены на проверку.</div>
       )}
     </div>
   );

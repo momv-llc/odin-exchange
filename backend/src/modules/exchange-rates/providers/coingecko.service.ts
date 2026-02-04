@@ -103,7 +103,9 @@ export class CoinGeckoService {
   async getCoinDetails(coinId: string) {
     try {
       const url = `${this.baseUrl}/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`;
-      const response = await firstValueFrom(this.httpService.get(url));
+      const response = await firstValueFrom(
+        this.httpService.get<Record<string, unknown>>(url),
+      );
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to get coin details for ${coinId}:`, error.message);
@@ -114,7 +116,9 @@ export class CoinGeckoService {
   async getHistoricalPrices(coinId: string, days: number = 30) {
     try {
       const url = `${this.baseUrl}/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`;
-      const response = await firstValueFrom(this.httpService.get(url));
+      const response = await firstValueFrom(
+        this.httpService.get<Record<string, unknown>>(url),
+      );
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to get historical prices for ${coinId}:`, error.message);

@@ -2,9 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
+// Fixed interface - Binance 24hr ticker returns lastPrice, not price
 interface BinanceTicker {
   symbol: string;
-  price: string;
+  lastPrice: string;        // <-- This is the correct field name
   priceChange: string;
   priceChangePercent: string;
   highPrice: string;
@@ -39,24 +40,34 @@ export class BinanceService {
   }>> {
     try {
       const symbols = JSON.stringify(this.pairs);
-      const url = this.baseUrl + '/ticker/24hr?symbols=' + encodeURIComponent(symbols);
+      const url = `${this.baseUrl}/ticker/24hr?symbols=${encodeURIComponent(symbols)}`;
       
       const response = await firstValueFrom(
         this.httpService.get<BinanceTicker[]>(url),
       );
 
-      return response.data.map((ticker) => {
-        const { base, quote } = this.parseSymbol(ticker.symbol);
-        return {
-          baseCurrency: base,
-          quoteCurrency: quote,
-          rate: parseFloat(ticker.price),
-          change24h: parseFloat(ticker.priceChangePercent),
-          high24h: parseFloat(ticker.highPrice),
-          low24h: parseFloat(ticker.lowPrice),
-          volume24h: parseFloat(ticker.quoteVolume),
-        };
-      });
+      return response.data
+        .map((ticker) => {
+          const { base, quote } = this.parseSymbol(ticker.symbol);
+          const rate = parseFloat(ticker.lastPrice);  // <-- Fixed: use lastPrice
+          
+          // Skip invalid rates
+          if (isNaN(rate) || rate <= 0) {
+            this.logger.warn(`Invalid rate for ${ticker.symbol}: ${ticker.lastPrice}`);
+            return null;
+          }
+
+          return {
+            baseCurrency: base,
+            quoteCurrency: quote,
+            rate,
+            change24h: parseFloat(ticker.priceChangePercent) || 0,
+            high24h: parseFloat(ticker.highPrice) || undefined,
+            low24h: parseFloat(ticker.lowPrice) || undefined,
+            volume24h: parseFloat(ticker.quoteVolume) || undefined,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
     } catch (error) {
       this.logger.error('Binance API error:', error.message);
       return [];
@@ -79,10 +90,12 @@ export class BinanceService {
   async getOrderBook(symbol: string, limit: number = 20) {
     try {
       const url = this.baseUrl + '/depth?symbol=' + symbol + '&limit=' + limit;
-      const response = await firstValueFrom(this.httpService.get(url));
+      const response = await firstValueFrom(
+        this.httpService.get<Record<string, unknown>>(url),
+      );
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to get order book for ' + symbol + ':', error.message);
+      this.logger.error(`Failed to get order book for ${symbol}:`, error.message);
       return null;
     }
   }
@@ -90,8 +103,10 @@ export class BinanceService {
   async getKlines(symbol: string, interval: string = '1h', limit: number = 100) {
     try {
       const url = this.baseUrl + '/klines?symbol=' + symbol + '&interval=' + interval + '&limit=' + limit;
-      const response = await firstValueFrom(this.httpService.get(url));
-      return response.data.map((k: any[]) => ({
+      const response = await firstValueFrom(
+        this.httpService.get<any[]>(url),
+      );
+      return response.data.map((k) => ({
         openTime: k[0],
         open: parseFloat(k[1]),
         high: parseFloat(k[2]),
@@ -101,7 +116,7 @@ export class BinanceService {
         closeTime: k[6],
       }));
     } catch (error) {
-      this.logger.error('Failed to get klines for ' + symbol + ':', error.message);
+      this.logger.error(`Failed to get klines for ${symbol}:`, error.message);
       return [];
     }
   }
