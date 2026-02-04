@@ -280,6 +280,16 @@ class ApiService {
       body: data,
     });
   }
+
+  // Audit log
+  async getAuditLogs(params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request<any>(`/admin/audit/logs${query ? `?${query}` : ''}`);
+  }
+
+  async getAuditAdmins() {
+    return this.request<any>('/admin/audit/admins');
+  }
 }
 
 export const api = new ApiService();

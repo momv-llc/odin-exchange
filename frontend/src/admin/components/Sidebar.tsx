@@ -13,6 +13,7 @@ import {
   MapPin,
   CreditCard,
   Send,
+  ClipboardList,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -25,6 +26,7 @@ const menuItems = [
   { path: '/admin/promo', icon: Tag, label: 'Promo Codes', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/admin/locations', icon: MapPin, label: 'Locations', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/admin/payment-methods', icon: CreditCard, label: 'Payment Methods', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { path: '/admin/audit', icon: ClipboardList, label: 'Audit Log', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR'] },
   { path: '/admin/settings', icon: Settings, label: 'Settings', roles: ['SUPER_ADMIN'] },
 ];
 
