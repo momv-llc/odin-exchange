@@ -131,9 +131,55 @@
 ## 🛠 Установка и запуск
 
 ### Требования
-- Node.js 20+
-- Docker и Docker Compose
+- Node.js 20+ (рекомендуется 20.x LTS)
+- npm 9+
+- Docker и Docker Compose (рекомендуется)
 - Git
+
+## 📦 Полный список зависимостей
+
+### Системные зависимости
+- Node.js 18+ (рекомендуется 20.x)
+- npm 9+
+- PostgreSQL 15+
+- Redis 7+
+- Docker 20+ и Docker Compose 2+ (для контейнерного запуска)
+- Nginx (для production)
+
+### Backend зависимости (runtime)
+- @nestjs/axios, @nestjs/bull, @nestjs/common, @nestjs/config, @nestjs/core
+- @nestjs/event-emitter, @nestjs/jwt, @nestjs/passport, @nestjs/platform-express
+- @nestjs/schedule, @nestjs/swagger, @nestjs/terminus, @nestjs/throttler
+- @prisma/client, argon2, axios, bcrypt, bull, class-transformer, class-validator
+- cors, helmet, ioredis, joi, nanoid, otplib, passport, passport-jwt, passport-local
+- qrcode, reflect-metadata, rxjs, stripe, web-push
+
+### Backend зависимости (dev)
+- @nestjs/cli, @nestjs/schematics, @nestjs/testing
+- @types/bcrypt, @types/express, @types/jest, @types/multer, @types/node
+- @types/nodemailer, @types/passport-jwt, @types/passport-local, @types/qrcode
+- @types/uuid, @types/web-push
+- @typescript-eslint/eslint-plugin, @typescript-eslint/parser
+- eslint, jest, prisma, ts-jest, ts-node, typescript
+
+### Frontend зависимости (runtime)
+- axios, clsx, lucide-react, react, react-dom, react-router-dom, tailwind-merge
+
+### Frontend зависимости (dev)
+- @tailwindcss/postcss, @tailwindcss/vite, @types/node, @types/react, @types/react-dom
+- @vitejs/plugin-react, autoprefixer, postcss, tailwindcss, typescript
+- vite, vite-plugin-singlefile
+
+## 🧩 Скрипты установки и запуска
+
+| Скрипт | Назначение |
+|--------|------------|
+| `setup_script/install.sh` | Полная автоматическая установка (интерактивно) |
+| `setup_script/setup-git.sh` | Настройка git hooks и конфигурации |
+| `setup_script/dev.sh` | Быстрый запуск для разработки |
+| `setup_script/deploy.sh` | Production деплой через Docker |
+
+## ✅ Пошаговая инструкция по установке
 
 ### 1. Клонирование репозитория
 
@@ -152,7 +198,16 @@ cp .env.example .env
 nano .env
 ```
 
-### 3. Запуск через Docker (рекомендуется)
+### 3. (Рекомендуется) Автоматическая установка
+
+```bash
+./setup_script/install.sh
+```
+
+Скрипт проверит требования, создаст `.env`, сгенерирует JWT/VAPID ключи, установит зависимости,
+поднимет PostgreSQL/Redis через Docker и применит миграции Prisma.
+
+### 4. Запуск через Docker (ручной)
 
 ```bash
 # Запуск всех сервисов
@@ -164,6 +219,47 @@ docker-compose logs -f
 # Остановка
 docker-compose down
 ```
+
+### 3.1. Production деплой (Ubuntu 24.04 + Docker + TLS)
+
+> Пример рассчитан на домены `ex.odineco.online` (frontend) и `api.odineco.online` (backend).
+
+```bash
+# 1) Установите Docker и Compose plugin
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg lsb-release
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# 2) Клонируйте проект и подготовьте .env
+git clone <repository-url>
+cd odin-exchange
+cp .env.example .env
+nano .env
+
+# 3) Запустите сервисы
+docker compose up -d
+```
+
+```bash
+# 4) Установите и настройте Nginx reverse-proxy
+sudo apt install -y nginx
+sudo cp deploy/nginx/odin-exchange.conf /etc/nginx/sites-available/odin-exchange.conf
+sudo ln -s /etc/nginx/sites-available/odin-exchange.conf /etc/nginx/sites-enabled/odin-exchange.conf
+sudo nginx -t
+sudo systemctl reload nginx
+
+# 5) Получите TLS сертификаты (Let's Encrypt)
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d ex.odineco.online -d api.odineco.online
+```
+
+> После выпуска сертификатов Certbot автоматически добавит HTTPS-блоки в конфиг Nginx.
 
 ### 4. Локальная разработка
 
@@ -179,6 +275,17 @@ npm run start:dev
 cd frontend
 npm install
 npm run dev
+```
+
+### 5. Проверка запуска
+
+- Frontend: http://localhost:3001 (или порт, указанный Vite)
+- API: http://localhost:3000
+- MailHog (если используется через Docker): http://localhost:8025
+### 6. Быстрый старт для разработки (альтернатива)
+
+```bash
+./setup_script/dev.sh
 ```
 
 ## 🔧 Конфигурация
@@ -240,7 +347,8 @@ VAPID_EMAIL=mailto:admin@odin-exchange.com
 
 # ============ Frontend ============
 FRONTEND_URL=http://localhost:3001
-VITE_API_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
+VITE_API_URL=http://localhost:3000/api/v1
 
 # ============ Rate Limiting ============
 THROTTLE_TTL=60
@@ -458,3 +566,20 @@ Proprietary - All rights reserved.
 ## 📞 Поддержка
 
 При возникновении вопросов обращайтесь в техническую поддержку.
+
+## 🚢 Деплой на Ubuntu 24.04
+
+1. Скопируйте `.env.example` в `.env` и заполните секреты (особенно JWT/SMTP/Stripe/PayPal).
+2. Запустите автоматический установочный скрипт:
+   ```bash
+   ./scripts/setup_server.sh
+   ```
+   Скрипт установит Docker, Docker Compose, Nginx, Certbot, создаст Nginx-конфиг и запустит контейнеры.
+3. Для автоматического TLS укажите email:
+   ```bash
+   CERTBOT_EMAIL=you@example.com ./scripts/setup_server.sh
+   ```
+
+⚠️ Перед запуском в продакшене убедитесь, что в `.env` корректно выставлены:
+- `FRONTEND_URL=https://ex.odineco.online`
+- `VITE_API_URL=https://api.odineco.online/api/v1`

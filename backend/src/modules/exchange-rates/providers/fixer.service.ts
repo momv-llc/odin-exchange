@@ -106,7 +106,9 @@ export class FixerService {
   async getHistoricalRate(date: string, base: string = 'EUR') {
     try {
       const url = `${this.baseUrl}/${date}?access_key=${this.apiKey}&base=${base}`;
-      const response = await firstValueFrom(this.httpService.get(url));
+      const response = await firstValueFrom(
+        this.httpService.get<Record<string, unknown>>(url),
+      );
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to get historical rate for ${date}:`, error.message);

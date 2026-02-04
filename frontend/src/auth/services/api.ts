@@ -7,6 +7,25 @@ interface RequestOptions {
   headers?: Record<string, string>;
 }
 
+interface ApiErrorPayload {
+  message?: string | string[];
+  error?: string;
+}
+
+const unwrap = <T>(payload: any): T => {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return payload.data as T;
+  }
+  return payload as T;
+};
+
+const getErrorMessage = (payload: ApiErrorPayload) => {
+  if (Array.isArray(payload?.message)) {
+    return payload.message.join(', ');
+  }
+  return payload?.message || payload?.error || 'Request failed';
+};
+
 class UserApiService {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
@@ -55,24 +74,16 @@ class UserApiService {
       config.body = JSON.stringify(body);
     }
 
-    try {
-      let response = await fetch(`${API_BASE}${endpoint}`, config);
+    let response = await fetch(`${API_BASE}${endpoint}`, config);
 
-      if (response.status === 401 && this.refreshToken) {
-        const refreshed = await this.refreshTokens();
-        if (refreshed) {
-          config.headers = {
-            ...config.headers as Record<string, string>,
-            Authorization: `Bearer ${this.accessToken}`,
-          };
-          response = await fetch(`${API_BASE}${endpoint}`, config);
-        }
-      }
-
-      if (response.status === 401) {
-        this.setTokens(null, null);
-        window.dispatchEvent(new Event('user-logout'));
-        throw new Error('Unauthorized');
+    if (response.status === 401 && this.refreshToken) {
+      const refreshed = await this.refreshTokens();
+      if (refreshed) {
+        config.headers = {
+          ...config.headers as Record<string, string>,
+          Authorization: `Bearer ${this.accessToken}`,
+        };
+        response = await fetch(`${API_BASE}${endpoint}`, config);
       }
 
       const data = await response.json();
@@ -85,6 +96,21 @@ class UserApiService {
     } catch (error: any) {
       throw error;
     }
+    }
+
+    if (response.status === 401) {
+      this.setTokens(null, null);
+      window.dispatchEvent(new Event('user-logout'));
+      throw new Error('Unauthorized');
+    }
+
+    const payload = await response.json();
+
+    if (!response.ok) {
+      throw new Error(getErrorMessage(payload));
+    }
+
+    return unwrap<T>(payload);
   }
 
   async refreshTokens(): Promise<boolean> {
@@ -97,12 +123,14 @@ class UserApiService {
         body: JSON.stringify({ refreshToken: this.refreshToken }),
       });
 
+      const payload = await response.json();
+
       if (!response.ok) {
         this.setTokens(null, null);
         return false;
       }
 
-      const data = await response.json();
+      const data = unwrap<{ accessToken: string; refreshToken: string }>(payload);
       this.setTokens(data.accessToken, data.refreshToken);
       return true;
     } catch {
@@ -168,10 +196,11 @@ class UserApiService {
   }
 
   async updateProfile(data: { firstName?: string; lastName?: string; phone?: string; preferredLang?: string }) {
-    return this.request<any>('/user/auth/me', {
+    const result = await this.request<any>('/user/auth/me', {
       method: 'PUT',
       body: data,
     });
+    return result.user ?? result;
   }
 
   async changePassword(currentPassword: string, newPassword: string) {
@@ -189,11 +218,6 @@ class UserApiService {
     return this.request<any>(`/user/auth/sessions/${sessionId}`, {
       method: 'DELETE',
     });
-  }
-
-  // Orders
-  async getMyOrders() {
-    return this.request<any>('/orders/my');
   }
 
   // Promo

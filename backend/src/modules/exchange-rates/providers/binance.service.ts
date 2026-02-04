@@ -89,8 +89,10 @@ export class BinanceService {
 
   async getOrderBook(symbol: string, limit: number = 20) {
     try {
-      const url = `${this.baseUrl}/depth?symbol=${symbol}&limit=${limit}`;
-      const response = await firstValueFrom(this.httpService.get(url));
+      const url = this.baseUrl + '/depth?symbol=' + symbol + '&limit=' + limit;
+      const response = await firstValueFrom(
+        this.httpService.get<Record<string, unknown>>(url),
+      );
       return response.data;
     } catch (error) {
       this.logger.error(`Failed to get order book for ${symbol}:`, error.message);
@@ -100,9 +102,11 @@ export class BinanceService {
 
   async getKlines(symbol: string, interval: string = '1h', limit: number = 100) {
     try {
-      const url = `${this.baseUrl}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-      const response = await firstValueFrom(this.httpService.get(url));
-      return response.data.map((k: any[]) => ({
+      const url = this.baseUrl + '/klines?symbol=' + symbol + '&interval=' + interval + '&limit=' + limit;
+      const response = await firstValueFrom(
+        this.httpService.get<any[]>(url),
+      );
+      return response.data.map((k) => ({
         openTime: k[0],
         open: parseFloat(k[1]),
         high: parseFloat(k[2]),

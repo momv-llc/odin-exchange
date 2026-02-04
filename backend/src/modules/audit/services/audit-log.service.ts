@@ -24,11 +24,24 @@ export class AuditLogService {
     }
   }
 
-  async findAll(params: { page?: number; limit?: number; adminId?: string; action?: string }) {
-    const { page = 1, limit = 50, adminId, action } = params;
+  async findAll(params: {
+    page?: number;
+    limit?: number;
+    adminId?: string;
+    action?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const { page = 1, limit = 50, adminId, action, startDate, endDate } = params;
     const where: any = {};
     if (adminId) where.adminId = adminId;
     if (action) where.action = { contains: action };
+    if (startDate || endDate) {
+      const createdAt: { gte?: Date; lte?: Date } = {};
+      if (startDate) createdAt.gte = new Date(startDate);
+      if (endDate) createdAt.lte = new Date(endDate);
+      where.createdAt = createdAt;
+    }
 
     const [logs, total] = await Promise.all([
       this.prisma.auditLog.findMany({
@@ -42,5 +55,13 @@ export class AuditLogService {
     ]);
 
     return { data: logs, meta: { total, page, limit } };
+  }
+
+  async listAdmins() {
+    return this.prisma.admin.findMany({
+      where: { isActive: true },
+      select: { id: true, email: true, role: true },
+      orderBy: { email: 'asc' },
+    });
   }
 }
