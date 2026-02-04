@@ -1,9 +1,13 @@
 import { Injectable, Logger, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '@/core/database/prisma.service';
 import { KycStatus, KycLevel, DocumentType } from '@prisma/client';
 import { nanoid } from 'nanoid';
 import * as fs from 'fs';
 import * as path from 'path';
+
+type KycDocumentRecord = {
+  type: DocumentType;
+};
 
 export interface SubmitKycDto {
   firstName: string;
@@ -191,7 +195,7 @@ export class KycService {
 
     // Check required documents
     const requiredDocs = [DocumentType.PASSPORT, DocumentType.SELFIE];
-    const uploadedTypes = kyc.documents.map(d => d.type);
+    const uploadedTypes = (kyc.documents as KycDocumentRecord[]).map(d => d.type);
     const hasIdDocument = uploadedTypes.includes(DocumentType.PASSPORT) ||
                           uploadedTypes.includes(DocumentType.ID_CARD) ||
                           uploadedTypes.includes(DocumentType.DRIVERS_LICENSE);
