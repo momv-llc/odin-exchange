@@ -14,6 +14,20 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HealthModule } from './health/health.module';
+import { UserAuthModule } from './modules/user-auth/user-auth.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { UsersAdminModule } from './modules/users-admin/users-admin.module';
+import { PromoModule } from './modules/promo/promo.module';
+import { TelegramModule } from './modules/telegram/telegram.module';
+import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
+import { LocationsModule } from './modules/locations/locations.module';
+import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { TransfersModule } from './modules/transfers/transfers.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { KycModule } from './modules/kyc/kyc.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { PushNotificationsModule } from './modules/push-notifications/push-notifications.module';
 
 @Module({
   imports: [
@@ -31,7 +45,9 @@ import { HealthModule } from './health/health.module';
       useFactory: (c: ConfigService) => ({ redis: { host: c.get('REDIS_HOST'), port: c.get('REDIS_PORT') } }),
     }),
     PrismaModule, RedisModule, OrdersModule, CurrenciesModule, ExchangeRatesModule,
-    AuthModule, AdminModule, AuditModule, NotificationsModule, HealthModule,
+    AuthModule, AdminModule, AuditModule, NotificationsModule, HealthModule, UserAuthModule, ReviewsModule,
+    UsersAdminModule, PromoModule, TelegramModule, WhatsAppModule, LocationsModule, PaymentMethodsModule, TransfersModule,
+    PaymentsModule, KycModule, ReferralsModule, AnalyticsModule, PushNotificationsModule,
   ],
 })
 export class AppModule {}

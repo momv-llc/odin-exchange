@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './core/common/filters/http-exception.filter';
 import { TransformInterceptor } from './core/common/interceptors/transform.interceptor';
 
@@ -13,21 +13,61 @@ async function bootstrap() {
   const config = app.get(ConfigService);
 
   app.use(helmet());
-  app.enableCors({ origin: config.get('CORS_ORIGINS', '*').split(','), credentials: true });
-  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+
+  // === CORS (production-deterministic) ===
+  const frontendUrl = config.get<string>('FRONTEND_URL');
+  if (!frontendUrl) {
+    throw new Error('FRONTEND_URL is not defined');
+  }
+
+  app.enableCors({
+    origin: frontendUrl,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  });
+
+  // === API versioning & prefix ===
   app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, transformOptions: { enableImplicitConversion: true } }));
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+
+  // === Global pipes / filters / interceptors ===
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
+
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  if (config.get('NODE_ENV') !== 'production') {
-    const swaggerConfig = new DocumentBuilder().setTitle('ODIN Exchange API').setVersion('1.0').addBearerAuth().build();
-    SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig));
-  }
+  // === Swagger (production only) ===
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('ODIN Exchange API')
+    .setDescription('API documentation for Odin Exchange')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .addServer('https://api.odineco.pro', 'Production')
+    .build();
 
-  const port = config.get('PORT', 3000);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
+
+  // === Start server ===
+  const port = config.get<number>('PORT', 3000);
   await app.listen(port);
-  logger.log(`🚀 API: http://localhost:${port}`);
-  logger.log(`📚 Docs: http://localhost:${port}/docs`);
+
+  logger.log(`🚀 API started on port ${port}`);
+  logger.log(`📚 Swagger available at /docs`);
 }
+
 bootstrap();

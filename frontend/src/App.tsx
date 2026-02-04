@@ -1,7 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ComponentType } from 'react';
 import { cn } from './utils/cn';
 import { translations, Language, TranslationKey } from './translations';
 import { generateReviews, ExchangeRequest } from './reviewsData';
+import { CurrencyTicker } from './components/CurrencyTicker';
+import { LocationsSection } from './components/LocationsSection';
+import { PaymentMethodsSection } from './components/PaymentMethodsSection';
+import { TransfersSection } from './components/TransfersSection';
+import { SupportChat } from './components/SupportChat';
+import { ScrollToTop } from './components/ScrollToTop';
+import { CurrencySelector } from './components/CurrencySelector';
+import { LocationSelector } from './components/LocationSelector';
 
 interface Currency {
   symbol: string;
@@ -11,16 +19,35 @@ interface Currency {
   icon: string;
 }
 
+interface PromoCodeInputProps {
+  amount: number;
+  onApply: (discount: number, promoCode: string) => void;
+  onClear: () => void;
+}
+
+interface AppProps {
+  AuthButtons?: ComponentType;
+  PromoCodeInput?: ComponentType<PromoCodeInputProps>;
+}
+
 const initialCurrencies: Currency[] = [
   { symbol: 'BTC', name: 'Bitcoin', price: 43250.50, change: 2.34, icon: '₿' },
   { symbol: 'ETH', name: 'Ethereum', price: 2280.75, change: -1.23, icon: 'Ξ' },
   { symbol: 'USDT', name: 'Tether', price: 1.00, change: 0.01, icon: '₮' },
+  { symbol: 'USDC', name: 'USD Coin', price: 1.00, change: 0.00, icon: '$' },
   { symbol: 'BNB', name: 'BNB', price: 312.45, change: 0.87, icon: '⬡' },
   { symbol: 'SOL', name: 'Solana', price: 98.65, change: 5.43, icon: '◎' },
   { symbol: 'XRP', name: 'XRP', price: 0.62, change: -0.54, icon: '✕' },
+  { symbol: 'ADA', name: 'Cardano', price: 0.52, change: 1.23, icon: '₳' },
+  { symbol: 'DOGE', name: 'Dogecoin', price: 0.08, change: 3.45, icon: 'Ð' },
+  { symbol: 'LTC', name: 'Litecoin', price: 72.50, change: -0.87, icon: 'Ł' },
+  { symbol: 'EUR', name: 'Euro', price: 1.08, change: 0.12, icon: '€' },
+  { symbol: 'USD', name: 'US Dollar', price: 1.00, change: 0.00, icon: '$' },
+  { symbol: 'GBP', name: 'British Pound', price: 1.27, change: 0.05, icon: '£' },
+  { symbol: 'CHF', name: 'Swiss Franc', price: 1.12, change: -0.03, icon: '₣' },
 ];
 
-export function App() {
+export function App({ AuthButtons, PromoCodeInput }: AppProps) {
   const [currentLang, setCurrentLang] = useState<Language>('en');
   const [currencies, setCurrencies] = useState<Currency[]>(initialCurrencies);
   const [selectedFrom, setSelectedFrom] = useState<Currency>(initialCurrencies[2]);
@@ -40,6 +67,21 @@ export function App() {
   const [trackingCode, setTrackingCode] = useState('');
   const [trackedRequest, setTrackedRequest] = useState<ExchangeRequest | null>(null);
   const [currentPage, setCurrentPage] = useState<'exchange' | 'reviews' | 'track'>('exchange');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoCode, setPromoCode] = useState('');
+  const [showFromCurrencySelector, setShowFromCurrencySelector] = useState(false);
+  const [showToCurrencySelector, setShowToCurrencySelector] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ id: string; city: string; country: string; flag: string } | null>(null);
+
+  // Reviews state
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newReviewName, setNewReviewName] = useState('');
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewComment, setNewReviewComment] = useState('');
+  const [userReviews, setUserReviews] = useState<Array<{ id: number; userName: string; rating: number; comment: string; date: string; isPositive: boolean }>>([]);
+  const reviewsPerPage = 15;
 
   const t = (key: TranslationKey) => translations[currentLang][key];
 
@@ -163,6 +205,32 @@ export function App() {
     ));
   };
 
+  const handleSubmitReview = () => {
+    if (!newReviewName.trim() || !newReviewComment.trim()) {
+      return;
+    }
+
+    const newReview = {
+      id: Date.now(),
+      userName: newReviewName,
+      rating: newReviewRating,
+      comment: newReviewComment,
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      isPositive: newReviewRating >= 4
+    };
+
+    setUserReviews(prev => [newReview, ...prev]);
+    setNewReviewName('');
+    setNewReviewRating(5);
+    setNewReviewComment('');
+    setShowReviewForm(false);
+  };
+
+  // Combine user reviews with generated reviews
+  const allReviews = [...userReviews, ...reviews];
+  const totalReviewPages = Math.ceil(allReviews.length / reviewsPerPage);
+  const paginatedReviews = allReviews.slice((reviewsPage - 1) * reviewsPerPage, reviewsPage * reviewsPerPage);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       <nav className="border-b border-slate-700/50 backdrop-blur-lg bg-slate-900/70 sticky top-0 z-50">
@@ -199,8 +267,8 @@ export function App() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <select 
-                value={currentLang} 
+              <select
+                value={currentLang}
                 onChange={(e) => setCurrentLang(e.target.value as Language)}
                 className="bg-slate-700/50 text-slate-300 px-3 py-2 rounded-lg border border-slate-600/50 focus:outline-none focus:border-emerald-400"
               >
@@ -209,16 +277,23 @@ export function App() {
                 <option value="ru">RU</option>
                 <option value="ua">UA</option>
               </select>
-              <button 
-                onClick={() => setGuestMode(!guestMode)}
-                className="px-4 py-2 text-slate-300 hover:text-white transition-colors"
-              >
-                {guestMode ? t('login') : t('guestExchange')}
-              </button>
+              {AuthButtons ? (
+                <AuthButtons />
+              ) : (
+                <button
+                  onClick={() => setGuestMode(!guestMode)}
+                  className="px-4 py-2 text-slate-300 hover:text-white transition-colors"
+                >
+                  {guestMode ? t('login') : t('guestExchange')}
+                </button>
+              )}
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Currency Ticker */}
+      <CurrencyTicker />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {currentPage === 'exchange' && (
@@ -288,8 +363,8 @@ export function App() {
                   <div className="bg-slate-700/50 rounded-2xl p-4 border border-slate-600/50">
                     <div className="flex items-center space-x-4">
                       <button
-                        onClick={() => setSelectedFrom(selectedFrom)}
-                        className="flex items-center space-x-3 bg-slate-600/50 rounded-xl px-4 py-3 hover:bg-slate-600 transition-colors"
+                        onClick={() => setShowFromCurrencySelector(true)}
+                        className="flex items-center space-x-3 bg-slate-600/50 rounded-xl px-4 py-3 hover:bg-slate-600 transition-colors group"
                       >
                         <span className="text-2xl">{selectedFrom.icon}</span>
                         <div className="text-left">
@@ -297,7 +372,7 @@ export function App() {
                           <div className="text-xs text-slate-400">{selectedFrom.name}</div>
                         </div>
                         <svg
-                          className="w-4 h-4 text-slate-400"
+                          className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -350,8 +425,8 @@ export function App() {
                   <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
                     <div className="flex items-center space-x-4">
                       <button
-                        onClick={() => setSelectedTo(selectedTo)}
-                        className="flex items-center space-x-3 bg-slate-600/30 rounded-xl px-4 py-3 hover:bg-slate-600/50 transition-colors"
+                        onClick={() => setShowToCurrencySelector(true)}
+                        className="flex items-center space-x-3 bg-slate-600/30 rounded-xl px-4 py-3 hover:bg-slate-600/50 transition-colors group"
                       >
                         <span className="text-2xl">{selectedTo.icon}</span>
                         <div className="text-left">
@@ -359,7 +434,7 @@ export function App() {
                           <div className="text-xs text-slate-400">{selectedTo.name}</div>
                         </div>
                         <svg
-                          className="w-4 h-4 text-slate-400"
+                          className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -386,19 +461,74 @@ export function App() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm text-slate-400 mb-6">
+                {/* Location Selector */}
+                <div className="mb-4">
+                  <label className="block text-slate-400 text-sm mb-2">Location</label>
+                  <button
+                    onClick={() => setShowLocationSelector(true)}
+                    className="w-full flex items-center justify-between bg-slate-700/30 rounded-xl px-4 py-3 border border-slate-600/30 hover:border-emerald-500/50 transition-colors group"
+                  >
+                    <div className="flex items-center space-x-3">
+                      {selectedLocation ? (
+                        <>
+                          <span className="text-xl">{selectedLocation.flag}</span>
+                          <div className="text-left">
+                            <div className="font-medium text-white">{selectedLocation.city}</div>
+                            <div className="text-xs text-slate-400">{selectedLocation.country}</div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="text-slate-400">Select pickup location</span>
+                        </>
+                      )}
+                    </div>
+                    <svg className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-sm text-slate-400 mb-4">
                   <span>{t('exchangeRate')}</span>
                   <span>
                     1 {selectedFrom.symbol} = {(selectedFrom.price / selectedTo.price).toFixed(6)} {selectedTo.symbol}
                   </span>
                 </div>
 
+                {PromoCodeInput && (
+                  <div className="mb-4">
+                    <PromoCodeInput
+                      amount={parseFloat(amountFrom) * selectedFrom.price || 0}
+                      onApply={(discount, code) => {
+                        setPromoDiscount(discount);
+                        setPromoCode(code);
+                      }}
+                      onClear={() => {
+                        setPromoDiscount(0);
+                        setPromoCode('');
+                      }}
+                    />
+                  </div>
+                )}
+
+                {promoDiscount > 0 && (
+                  <div className="flex items-center justify-between text-sm mb-4 p-3 bg-emerald-500/10 rounded-lg">
+                    <span className="text-slate-300">Discount ({promoCode})</span>
+                    <span className="text-emerald-400 font-medium">-${promoDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+
                 <button
                   onClick={handleSwap}
-                  disabled={isSwapping || !amountFrom || parseFloat(amountFrom) <= 0}
+                  disabled={isSwapping}
                   className={cn(
                     'w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-200',
-                    isSwapping || !amountFrom || parseFloat(amountFrom) <= 0
+                    isSwapping
                       ? 'bg-slate-600 cursor-not-allowed'
                       : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/25'
                   )}
@@ -574,6 +704,15 @@ export function App() {
                 </div>
               )}
             </div>
+
+            {/* Payment Methods Section */}
+            <PaymentMethodsSection lang={currentLang} />
+
+            {/* Locations Section */}
+            <LocationsSection lang={currentLang} />
+
+            {/* Money Transfers Section */}
+            <TransfersSection lang={currentLang} />
           </>
         )}
 
@@ -585,42 +724,219 @@ export function App() {
                   {t('reviewsTitle')}
                 </span>
               </h1>
-              <div className="flex justify-center space-x-8 mt-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-emerald-400">{reviews.length}</div>
-                  <div className="text-slate-400">{t('totalReviews')}</div>
+              <p className="text-slate-400 text-lg mb-8">{t('tagline')}</p>
+
+              {/* Stats */}
+              <div className="flex flex-wrap justify-center gap-6 mt-6">
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 min-w-[150px]">
+                  <div className="text-3xl font-bold text-emerald-400">{allReviews.length.toLocaleString()}</div>
+                  <div className="text-slate-400 text-sm">{t('totalReviews')}</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-emerald-400">{Math.round(reviews.filter(r => r.isPositive).length / reviews.length * 100)}%</div>
-                  <div className="text-slate-400">{t('positiveReviews')}</div>
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 min-w-[150px]">
+                  <div className="text-3xl font-bold text-emerald-400">{Math.round(allReviews.filter(r => r.isPositive).length / allReviews.length * 100)}%</div>
+                  <div className="text-slate-400 text-sm">{t('positiveReviews')}</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-yellow-400">{Math.round(reviews.filter(r => !r.isPositive).length / reviews.length * 100)}%</div>
-                  <div className="text-slate-400">{t('neutralReviews')}</div>
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 min-w-[150px]">
+                  <div className="text-3xl font-bold text-yellow-400">
+                    {(allReviews.reduce((acc, r) => acc + r.rating, 0) / allReviews.length).toFixed(1)}
+                  </div>
+                  <div className="text-slate-400 text-sm">Average Rating</div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2">
-              {reviews.slice(0, 50).map((review) => (
-                <div key={review.id} className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-6">
-                  <div className="flex items-start justify-between mb-4">
+            {/* Add Review Button */}
+            <div className="flex justify-end mb-6">
+              <button
+                onClick={() => setShowReviewForm(true)}
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center space-x-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Add Review</span>
+              </button>
+            </div>
+
+            {/* Review Form Modal */}
+            {showReviewForm && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowReviewForm(false)}>
+                <div className="bg-slate-800 rounded-2xl p-8 max-w-lg w-full border border-slate-700 shadow-2xl animate-modalSlideIn" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-2xl font-bold text-white">Write a Review</h3>
+                    <button onClick={() => setShowReviewForm(false)} className="text-slate-400 hover:text-white p-2">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Name Input */}
                     <div>
-                      <div className="font-semibold text-white">{review.userName}</div>
-                      <div className="text-sm text-slate-400">{review.date}</div>
+                      <label className="block text-slate-400 text-sm mb-2">Your Name</label>
+                      <input
+                        type="text"
+                        value={newReviewName}
+                        onChange={(e) => setNewReviewName(e.target.value)}
+                        placeholder="Enter your name"
+                        className="w-full bg-slate-700/50 rounded-xl px-4 py-3 border border-slate-600/50 focus:outline-none focus:border-emerald-400 text-white"
+                      />
                     </div>
-                    <div className="flex items-center space-x-1">
-                      {renderStars(review.rating)}
+
+                    {/* Rating Selection */}
+                    <div>
+                      <label className="block text-slate-400 text-sm mb-2">Your Rating</label>
+                      <div className="flex items-center space-x-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setNewReviewRating(star)}
+                            className="text-3xl transition-transform hover:scale-110 focus:outline-none"
+                          >
+                            <span className={star <= newReviewRating ? 'text-yellow-400' : 'text-slate-600'}>★</span>
+                          </button>
+                        ))}
+                        <span className="text-slate-400 ml-2">({newReviewRating}/5)</span>
+                      </div>
+                    </div>
+
+                    {/* Comment Input */}
+                    <div>
+                      <label className="block text-slate-400 text-sm mb-2">Your Review</label>
+                      <textarea
+                        value={newReviewComment}
+                        onChange={(e) => setNewReviewComment(e.target.value)}
+                        placeholder="Share your experience..."
+                        rows={4}
+                        className="w-full bg-slate-700/50 rounded-xl px-4 py-3 border border-slate-600/50 focus:outline-none focus:border-emerald-400 text-white resize-none"
+                      />
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      onClick={handleSubmitReview}
+                      className="w-full py-4 rounded-xl font-semibold text-lg transition-all bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90"
+                    >
+                      Submit Review
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Reviews Grid - 3 columns */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {paginatedReviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-6 hover:border-emerald-500/30 transition-all hover:shadow-lg hover:shadow-emerald-500/5 card-hover"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {review.userName[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{review.userName}</div>
+                        <div className="text-xs text-slate-400">{review.date}</div>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center space-x-1 mb-3">
+                    {renderStars(review.rating)}
+                    <span className={cn(
+                      "ml-2 text-xs px-2 py-0.5 rounded-full",
+                      review.isPositive ? "bg-emerald-500/10 text-emerald-400" : "bg-yellow-500/10 text-yellow-400"
+                    )}>
+                      {review.isPositive ? 'Positive' : 'Neutral'}
+                    </span>
+                  </div>
                   <p className={cn(
-                    "text-sm",
+                    "text-sm leading-relaxed",
                     review.isPositive ? "text-slate-300" : "text-slate-400"
                   )}>
                     {review.comment}
                   </p>
                 </div>
               ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-center space-x-2 mt-8">
+              <button
+                onClick={() => setReviewsPage(p => Math.max(1, p - 1))}
+                className="px-4 py-2 rounded-lg font-medium transition-colors bg-slate-700/50 text-white hover:bg-slate-600/50"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              {/* Page numbers */}
+              <div className="flex items-center space-x-1">
+                {(() => {
+                  const pages = [];
+                  const showPages = 5;
+                  let start = Math.max(1, reviewsPage - Math.floor(showPages / 2));
+                  let end = Math.min(totalReviewPages, start + showPages - 1);
+
+                  if (end - start + 1 < showPages) {
+                    start = Math.max(1, end - showPages + 1);
+                  }
+
+                  if (start > 1) {
+                    pages.push(
+                      <button key={1} onClick={() => setReviewsPage(1)} className="w-10 h-10 rounded-lg bg-slate-700/50 text-white hover:bg-slate-600/50">1</button>
+                    );
+                    if (start > 2) {
+                      pages.push(<span key="start-ellipsis" className="text-slate-500 px-2">...</span>);
+                    }
+                  }
+
+                  for (let i = start; i <= end; i++) {
+                    pages.push(
+                      <button
+                        key={i}
+                        onClick={() => setReviewsPage(i)}
+                        className={cn(
+                          "w-10 h-10 rounded-lg font-medium transition-colors",
+                          i === reviewsPage
+                            ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white"
+                            : "bg-slate-700/50 text-white hover:bg-slate-600/50"
+                        )}
+                      >
+                        {i}
+                      </button>
+                    );
+                  }
+
+                  if (end < totalReviewPages) {
+                    if (end < totalReviewPages - 1) {
+                      pages.push(<span key="end-ellipsis" className="text-slate-500 px-2">...</span>);
+                    }
+                    pages.push(
+                      <button key={totalReviewPages} onClick={() => setReviewsPage(totalReviewPages)} className="w-10 h-10 rounded-lg bg-slate-700/50 text-white hover:bg-slate-600/50">{totalReviewPages}</button>
+                    );
+                  }
+
+                  return pages;
+                })()}
+              </div>
+
+              <button
+                onClick={() => setReviewsPage(p => Math.min(totalReviewPages, p + 1))}
+                className="px-4 py-2 rounded-lg font-medium transition-colors bg-slate-700/50 text-white hover:bg-slate-600/50"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Page info */}
+            <div className="text-center mt-4 text-slate-400 text-sm">
+              Page {reviewsPage} of {totalReviewPages} ({allReviews.length.toLocaleString()} reviews)
             </div>
           </div>
         )}
@@ -822,6 +1138,52 @@ export function App() {
           </div>
         </div>
       </footer>
+
+      {/* Support Chat Widget */}
+      <SupportChat lang={currentLang} />
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
+
+      {/* Currency Selector Modals */}
+      <CurrencySelector
+        isOpen={showFromCurrencySelector}
+        onClose={() => setShowFromCurrencySelector(false)}
+        onSelect={(currency) => setSelectedFrom(currency)}
+        currencies={currencies}
+        selectedCurrency={selectedFrom}
+        title={t('youSend')}
+      />
+
+      <CurrencySelector
+        isOpen={showToCurrencySelector}
+        onClose={() => setShowToCurrencySelector(false)}
+        onSelect={(currency) => setSelectedTo(currency)}
+        currencies={currencies}
+        selectedCurrency={selectedTo}
+        title={t('youReceive')}
+      />
+
+      {/* Location Selector Modal */}
+      <LocationSelector
+        isOpen={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+        onSelect={(location) => setSelectedLocation({
+          id: location.id,
+          city: location.city,
+          country: location.country,
+          flag: location.flag
+        })}
+        selectedLocation={selectedLocation ? {
+          id: selectedLocation.id,
+          country: selectedLocation.country,
+          countryCode: '',
+          city: selectedLocation.city,
+          isAvailable: true,
+          flag: selectedLocation.flag
+        } : null}
+        lang={currentLang}
+      />
     </div>
   );
 }

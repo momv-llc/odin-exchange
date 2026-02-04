@@ -130,7 +130,7 @@ export class AuthService {
   }
 
   async confirm2FA(id: string, code: string) {
-    const secret = await this.redis.get<string>(`2fa:${id}`);
+    const secret = await this.redis.get(`2fa:${id}`);
 
     if (!secret) {
       throw new BadRequestException('Expired');
