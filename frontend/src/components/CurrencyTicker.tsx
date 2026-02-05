@@ -58,6 +58,23 @@ const ICON_MAP: Record<string, string> = {
   OIL: '🛢️',
 };
 
+const FALLBACK_TICKER_DATA: TickerItem[] = [
+  { symbol: 'BTC', name: 'Bitcoin', price: 43250.5, change: 2.34, icon: ICON_MAP.BTC, type: 'crypto' },
+  { symbol: 'ETH', name: 'Ethereum', price: 2280.75, change: -1.23, icon: ICON_MAP.ETH, type: 'crypto' },
+  { symbol: 'USDT', name: 'Tether', price: 1.0, change: 0.01, icon: ICON_MAP.USDT, type: 'crypto' },
+  { symbol: 'BNB', name: 'BNB', price: 312.45, change: 0.87, icon: ICON_MAP.BNB, type: 'crypto' },
+  { symbol: 'SOL', name: 'Solana', price: 98.65, change: 5.43, icon: ICON_MAP.SOL, type: 'crypto' },
+  { symbol: 'XRP', name: 'XRP', price: 0.62, change: -0.54, icon: ICON_MAP.XRP, type: 'crypto' },
+  { symbol: 'EUR/USD', name: 'Euro', price: 1.08, change: 0.12, icon: ICON_MAP.EUR, type: 'fiat' },
+  { symbol: 'GBP/USD', name: 'Pound', price: 1.27, change: 0.05, icon: ICON_MAP.GBP, type: 'fiat' },
+  { symbol: 'USD/RUB', name: 'US Dollar', price: 92.4, change: 0.42, icon: ICON_MAP.USD, type: 'fiat' },
+  { symbol: 'USD/UAH', name: 'US Dollar', price: 39.7, change: 0.31, icon: ICON_MAP.USD, type: 'fiat' },
+  { symbol: 'USD/CHF', name: 'US Dollar', price: 0.91, change: -0.09, icon: ICON_MAP.USD, type: 'fiat' },
+  { symbol: 'XAU', name: 'Gold', price: 2015.4, change: 0.28, icon: ICON_MAP.XAU, type: 'commodity' },
+  { symbol: 'XAG', name: 'Silver', price: 24.7, change: -0.62, icon: ICON_MAP.XAG, type: 'commodity' },
+  { symbol: 'OIL', name: 'Brent', price: 83.2, change: 0.41, icon: ICON_MAP.OIL, type: 'commodity' },
+];
+
 const CRYPTO_REFRESH_MS = 60 * 1000;
 const FIAT_REFRESH_MS = 60 * 60 * 1000;
 
@@ -134,7 +151,9 @@ const sortTickerData = (items: TickerItem[]) => {
 };
 
 export function CurrencyTicker() {
-  const [tickerData, setTickerData] = useState<TickerItem[]>([]);
+  const [tickerData, setTickerData] = useState<TickerItem[]>(
+    sortTickerData(FALLBACK_TICKER_DATA)
+  );
   const [isPaused, setIsPaused] = useState(false);
   const tickerRef = useRef<HTMLDivElement>(null);
 
@@ -159,9 +178,14 @@ export function CurrencyTicker() {
       const normalized = normalizeRates(rates).filter(
         (rate) => rate.type === 'crypto' && CRYPTO_SYMBOLS.includes(rate.symbol)
       );
+      if (normalized.length === 0) {
+        updateTickerData(FALLBACK_TICKER_DATA.filter((item) => item.type === 'crypto'), ['crypto']);
+        return;
+      }
       updateTickerData(normalized, ['crypto']);
     } catch (error) {
       console.error('Failed to fetch crypto rates:', error);
+      updateTickerData(FALLBACK_TICKER_DATA.filter((item) => item.type === 'crypto'), ['crypto']);
     }
   };
 
@@ -178,9 +202,20 @@ export function CurrencyTicker() {
 
         return rate.type === 'fiat' && FIAT_PAIRS.includes(rate.symbol);
       });
+      if (normalized.length === 0) {
+        updateTickerData(
+          FALLBACK_TICKER_DATA.filter((item) => item.type !== 'crypto'),
+          ['fiat', 'commodity']
+        );
+        return;
+      }
       updateTickerData(normalized, ['fiat', 'commodity']);
     } catch (error) {
       console.error('Failed to fetch fiat rates:', error);
+      updateTickerData(
+        FALLBACK_TICKER_DATA.filter((item) => item.type !== 'crypto'),
+        ['fiat', 'commodity']
+      );
     }
   };
 

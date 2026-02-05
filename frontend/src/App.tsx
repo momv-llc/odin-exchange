@@ -525,10 +525,10 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
 
                 <button
                   onClick={handleSwap}
-                  disabled={isSwapping || !amountFrom || parseFloat(amountFrom) <= 0}
+                  disabled={isSwapping}
                   className={cn(
                     'w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-200',
-                    isSwapping || !amountFrom || parseFloat(amountFrom) <= 0
+                    isSwapping
                       ? 'bg-slate-600 cursor-not-allowed'
                       : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/25'
                   )}
@@ -816,13 +816,7 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                     {/* Submit Button */}
                     <button
                       onClick={handleSubmitReview}
-                      disabled={!newReviewName.trim() || !newReviewComment.trim()}
-                      className={cn(
-                        "w-full py-4 rounded-xl font-semibold text-lg transition-all",
-                        newReviewName.trim() && newReviewComment.trim()
-                          ? "bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90"
-                          : "bg-slate-600 cursor-not-allowed"
-                      )}
+                      className="w-full py-4 rounded-xl font-semibold text-lg transition-all bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90"
                     >
                       Submit Review
                     </button>
@@ -872,13 +866,7 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
             <div className="flex items-center justify-center space-x-2 mt-8">
               <button
                 onClick={() => setReviewsPage(p => Math.max(1, p - 1))}
-                disabled={reviewsPage === 1}
-                className={cn(
-                  "px-4 py-2 rounded-lg font-medium transition-colors",
-                  reviewsPage === 1
-                    ? "bg-slate-700/30 text-slate-500 cursor-not-allowed"
-                    : "bg-slate-700/50 text-white hover:bg-slate-600/50"
-                )}
+                className="px-4 py-2 rounded-lg font-medium transition-colors bg-slate-700/50 text-white hover:bg-slate-600/50"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -938,13 +926,7 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
 
               <button
                 onClick={() => setReviewsPage(p => Math.min(totalReviewPages, p + 1))}
-                disabled={reviewsPage === totalReviewPages}
-                className={cn(
-                  "px-4 py-2 rounded-lg font-medium transition-colors",
-                  reviewsPage === totalReviewPages
-                    ? "bg-slate-700/30 text-slate-500 cursor-not-allowed"
-                    : "bg-slate-700/50 text-white hover:bg-slate-600/50"
-                )}
+                className="px-4 py-2 rounded-lg font-medium transition-colors bg-slate-700/50 text-white hover:bg-slate-600/50"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
