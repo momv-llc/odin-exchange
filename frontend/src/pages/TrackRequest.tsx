@@ -1,5 +1,4 @@
-import { ComponentType, useState } from 'react';
-import { useEffect, useState } from 'react';
+import { ComponentType, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Language } from '../translations';
 import { Navbar } from '../components/Navbar';
@@ -24,7 +23,7 @@ interface TrackRequestProps {
   AuthButtons?: ComponentType;
 }
 
-export function TrackRequest({ currentLang, setCurrentLang }: TrackRequestProps) {
+export function TrackRequest({ currentLang, setCurrentLang, AuthButtons }: TrackRequestProps) {
   const { code } = useParams<{ code?: string }>();
   const [trackingCode, setTrackingCode] = useState(code || '');
   const [trackedRequest, setTrackedRequest] = useState<OrderResponse | null>(null);
@@ -110,8 +109,6 @@ export function TrackRequest({ currentLang, setCurrentLang }: TrackRequestProps)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Navbar currentLang={currentLang} setCurrentLang={setCurrentLang} AuthButtons={AuthButtons} />
-      
-      <Navbar currentLang={currentLang} setCurrentLang={setCurrentLang} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}

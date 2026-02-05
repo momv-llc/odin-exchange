@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
+const normalizeApiBase = (base: string) =>
+  base.replace('api.odineco.online', 'api.odineco.pro');
+const API_URL = normalizeApiBase(import.meta.env.VITE_API_URL || '/api/v1');
 
 export const api = axios.create({
   baseURL: API_URL,

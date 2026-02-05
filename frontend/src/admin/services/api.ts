@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+const normalizeApiBase = (base: string) => base.replace('api.odineco.online', 'api.odineco.pro');
+const API_BASE = normalizeApiBase(import.meta.env.VITE_API_URL || '/api/v1');
 
 interface RequestOptions {
   method?: string;
@@ -78,12 +79,8 @@ class ApiService {
     return unwrap<T>(payload);
   }
 
-  // Auth endpoints
   async login(email: string, password: string) {
-    return this.request<any>('/admin/auth/login', {
-      method: 'POST',
-      body: { email, password },
-    });
+    return this.request<any>('/admin/auth/login', { method: 'POST', body: { email, password } });
   }
 
   async verify2FA(tempToken: string, code: string) {
@@ -99,24 +96,17 @@ class ApiService {
   }
 
   async setup2FA() {
-    return this.request<any>('/admin/auth/2fa/setup', {
-      method: 'POST',
-    });
+    return this.request<any>('/admin/auth/2fa/setup', { method: 'POST' });
   }
 
   async confirm2FA(code: string) {
-    return this.request<any>('/admin/auth/2fa/confirm', {
-      method: 'POST',
-      body: { code },
-    });
+    return this.request<any>('/admin/auth/2fa/confirm', { method: 'POST', body: { code } });
   }
 
-  // Dashboard
   async getDashboardStats(period: string = '24h') {
     return this.request<any>(`/admin/dashboard?period=${period}`);
   }
 
-  // Orders
   async getOrders(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/orders${query ? `?${query}` : ''}`);
@@ -135,13 +125,9 @@ class ApiService {
   }
 
   async rejectOrder(id: string, reason: string) {
-    return this.request<any>(`/admin/orders/${id}/reject`, {
-      method: 'PATCH',
-      body: { reason },
-    });
+    return this.request<any>(`/admin/orders/${id}/reject`, { method: 'PATCH', body: { reason } });
   }
 
-  // Users
   async getUsers(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/users${query ? `?${query}` : ''}`);
@@ -156,13 +142,9 @@ class ApiService {
   }
 
   async updateUserStatus(id: string, status: string) {
-    return this.request<any>(`/admin/users/${id}/status`, {
-      method: 'PATCH',
-      body: { status },
-    });
+    return this.request<any>(`/admin/users/${id}/status`, { method: 'PATCH', body: { status } });
   }
 
-  // Reviews
   async getReviews(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/reviews${query ? `?${query}` : ''}`);
@@ -173,20 +155,13 @@ class ApiService {
   }
 
   async approveReview(id: string, notes?: string) {
-    return this.request<any>(`/admin/reviews/${id}/approve`, {
-      method: 'PATCH',
-      body: { notes },
-    });
+    return this.request<any>(`/admin/reviews/${id}/approve`, { method: 'PATCH', body: { notes } });
   }
 
   async rejectReview(id: string, notes?: string) {
-    return this.request<any>(`/admin/reviews/${id}/reject`, {
-      method: 'PATCH',
-      body: { notes },
-    });
+    return this.request<any>(`/admin/reviews/${id}/reject`, { method: 'PATCH', body: { notes } });
   }
 
-  // Promo
   async getPromos(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/promo${query ? `?${query}` : ''}`);
@@ -196,7 +171,18 @@ class ApiService {
     return this.request<any>('/admin/promo/stats');
   }
 
-  // KYC
+  async createPromo(data: any) {
+    return this.request<any>('/admin/promo', { method: 'POST', body: data });
+  }
+
+  async updatePromo(id: string, data: any) {
+    return this.request<any>(`/admin/promo/${id}`, { method: 'PUT', body: data });
+  }
+
+  async deletePromo(id: string) {
+    return this.request<any>(`/admin/promo/${id}`, { method: 'DELETE' });
+  }
+
   async getKycSubmissions(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/kyc${query ? `?${query}` : ''}`);
@@ -206,7 +192,6 @@ class ApiService {
     return this.request<any>('/admin/kyc/stats');
   }
 
-  // Referrals
   async getReferrals(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/referrals${query ? `?${query}` : ''}`);
@@ -216,153 +201,49 @@ class ApiService {
     return this.request<any>('/admin/referrals/stats');
   }
 
-  async createPromo(data: any) {
-    return this.request<any>('/admin/promo', {
-      method: 'POST',
-      body: data,
-    });
-  }
-
-  async updatePromo(id: string, data: any) {
-    return this.request<any>(`/admin/promo/${id}`, {
-      method: 'PUT',
-      body: data,
-    });
-  }
-
-  async deletePromo(id: string) {
-    return this.request<any>(`/admin/promo/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Locations
   async getLocations(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/locations${query ? `?${query}` : ''}`);
   }
 
   async createLocation(data: any) {
-    return this.request<any>('/admin/locations', {
-      method: 'POST',
-      body: data,
-    });
+    return this.request<any>('/admin/locations', { method: 'POST', body: data });
   }
 
   async updateLocation(id: string, data: any) {
-    return this.request<any>(`/admin/locations/${id}`, {
-      method: 'PUT',
-  }
-
-  // Locations
-  async getLocations(params: any = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request<any>(`/admin/locations${query ? `?${query}` : ''}`);
-  }
-
-  async createLocation(data: any) {
-    return this.request<any>('/admin/locations', {
-      method: 'POST',
-      body: data,
-    });
-  }
-
-  async updateLocation(id: string, data: any) {
-    return this.request<any>(`/admin/locations/${id}`, {
-      method: 'PUT',
-      body: data,
-    });
+    return this.request<any>(`/admin/locations/${id}`, { method: 'PUT', body: data });
   }
 
   async deleteLocation(id: string) {
-    return this.request<any>(`/admin/locations/${id}`, {
-      method: 'DELETE',
-    });
+    return this.request<any>(`/admin/locations/${id}`, { method: 'DELETE' });
   }
 
-  // Payment methods
   async getPaymentMethods(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/payment-methods${query ? `?${query}` : ''}`);
   }
 
   async createPaymentMethod(data: any) {
-    return this.request<any>('/admin/payment-methods', {
-      method: 'POST',
-      body: data,
-    });
+    return this.request<any>('/admin/payment-methods', { method: 'POST', body: data });
   }
 
   async updatePaymentMethod(id: string, data: any) {
-    return this.request<any>(`/admin/payment-methods/${id}`, {
-      method: 'PUT',
-      body: data,
-    });
+    return this.request<any>(`/admin/payment-methods/${id}`, { method: 'PUT', body: data });
   }
 
   async deletePaymentMethod(id: string) {
-    return this.request<any>(`/admin/payment-methods/${id}`, {
-      method: 'DELETE',
-    });
+    return this.request<any>(`/admin/payment-methods/${id}`, { method: 'DELETE' });
   }
 
-  // Transfers
   async getTransfers(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/transfers${query ? `?${query}` : ''}`);
   }
 
   async updateTransferStatus(id: string, data: any) {
-    return this.request<any>(`/admin/transfers/${id}/status`, {
-      method: 'PATCH',
-      body: data,
-    });
+    return this.request<any>(`/admin/transfers/${id}/status`, { method: 'PATCH', body: data });
   }
 
-  async deleteLocation(id: string) {
-    return this.request<any>(`/admin/locations/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Payment methods
-  async getPaymentMethods(params: any = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request<any>(`/admin/payment-methods${query ? `?${query}` : ''}`);
-  }
-
-  async createPaymentMethod(data: any) {
-    return this.request<any>('/admin/payment-methods', {
-      method: 'POST',
-      body: data,
-    });
-  }
-
-  async updatePaymentMethod(id: string, data: any) {
-    return this.request<any>(`/admin/payment-methods/${id}`, {
-      method: 'PUT',
-      body: data,
-    });
-  }
-
-  async deletePaymentMethod(id: string) {
-    return this.request<any>(`/admin/payment-methods/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Transfers
-  async getTransfers(params: any = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request<any>(`/admin/transfers${query ? `?${query}` : ''}`);
-  }
-
-  async updateTransferStatus(id: string, data: any) {
-    return this.request<any>(`/admin/transfers/${id}/status`, {
-      method: 'PATCH',
-      body: data,
-    });
-  // Audit log
   async getAuditLogs(params: any = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request<any>(`/admin/audit/logs${query ? `?${query}` : ''}`);
