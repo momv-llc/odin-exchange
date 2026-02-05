@@ -1,5 +1,4 @@
-import { ComponentType, useState } from 'react';
-import { useEffect, useState } from 'react';
+import { ComponentType, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Language } from '../translations';
 import { Navbar } from '../components/Navbar';

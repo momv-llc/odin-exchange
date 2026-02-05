@@ -1,11 +1,10 @@
-// Use the real API base URL for auth/profile flows (with local fallback).
 const normalizeApiBase = (base: string) =>
   base.replace('api.odineco.online', 'api.odineco.pro');
 const API_BASE = normalizeApiBase(import.meta.env.VITE_API_URL || '/api/v1');
 
 interface RequestOptions {
   method?: string;
-  body?: any;
+  body?: unknown;
   headers?: Record<string, string>;
 }
 
@@ -14,9 +13,9 @@ interface ApiErrorPayload {
   error?: string;
 }
 
-const unwrap = <T>(payload: any): T => {
+const unwrap = <T>(payload: unknown): T => {
   if (payload && typeof payload === 'object' && 'data' in payload) {
-    return payload.data as T;
+    return (payload as { data: T }).data;
   }
   return payload as T;
 };
@@ -40,20 +39,12 @@ class UserApiService {
   setTokens(access: string | null, refresh: string | null) {
     this.accessToken = access;
     this.refreshToken = refresh;
-    if (access) {
-      localStorage.setItem('user_access_token', access);
-    } else {
-      localStorage.removeItem('user_access_token');
-    }
-    if (refresh) {
-      localStorage.setItem('user_refresh_token', refresh);
-    } else {
-      localStorage.removeItem('user_refresh_token');
-    }
-  }
 
-  getAccessToken(): string | null {
-    return this.accessToken;
+    if (access) localStorage.setItem('user_access_token', access);
+    else localStorage.removeItem('user_access_token');
+
+    if (refresh) localStorage.setItem('user_refresh_token', refresh);
+    else localStorage.removeItem('user_refresh_token');
   }
 
   isLoggedIn(): boolean {
@@ -82,22 +73,11 @@ class UserApiService {
       const refreshed = await this.refreshTokens();
       if (refreshed) {
         config.headers = {
-          ...config.headers as Record<string, string>,
+          ...(config.headers as Record<string, string>),
           Authorization: `Bearer ${this.accessToken}`,
         };
         response = await fetch(`${API_BASE}${endpoint}`, config);
       }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
-      }
-
-      return data;
-    } catch (error: any) {
-      throw error;
-    }
     }
 
     if (response.status === 401) {
@@ -126,7 +106,6 @@ class UserApiService {
       });
 
       const payload = await response.json();
-
       if (!response.ok) {
         this.setTokens(null, null);
         return false;
@@ -141,12 +120,8 @@ class UserApiService {
     }
   }
 
-  // Auth endpoints
   async register(data: { email: string; password: string; firstName?: string; lastName?: string; phone?: string }) {
-    return this.request<any>('/user/auth/register', {
-      method: 'POST',
-      body: data,
-    });
+    return this.request<any>('/user/auth/register', { method: 'POST', body: data });
   }
 
   async login(email: string, password: string) {
@@ -166,9 +141,10 @@ class UserApiService {
           body: { refreshToken: this.refreshToken },
         });
       } catch {
-        // Ignore logout errors
+        // ignore
       }
     }
+
     this.setTokens(null, null);
   }
 
@@ -198,10 +174,7 @@ class UserApiService {
   }
 
   async updateProfile(data: { firstName?: string; lastName?: string; phone?: string; preferredLang?: string }) {
-    const result = await this.request<any>('/user/auth/me', {
-      method: 'PUT',
-      body: data,
-    });
+    const result = await this.request<any>('/user/auth/me', { method: 'PUT', body: data });
     return result.user ?? result;
   }
 
@@ -217,20 +190,13 @@ class UserApiService {
   }
 
   async revokeSession(sessionId: string) {
-    return this.request<any>(`/user/auth/sessions/${sessionId}`, {
-      method: 'DELETE',
-    });
+    return this.request<any>(`/user/auth/sessions/${sessionId}`, { method: 'DELETE' });
   }
 
-  // Promo
   async validatePromo(code: string, amount: number) {
-    return this.request<any>('/promo/validate', {
-      method: 'POST',
-      body: { code, amount },
-    });
+    return this.request<any>('/promo/validate', { method: 'POST', body: { code, amount } });
   }
 
-  // Reviews
   async submitReview(data: { rating: number; title?: string; content: string; orderId?: string }) {
     return this.request<any>('/reviews/user', {
       method: 'POST',
