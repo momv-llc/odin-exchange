@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AdminLayout } from './components/Layout';
 import { LoginPage } from './pages/Login';
@@ -10,7 +11,6 @@ import { PromoPage } from './pages/Promo';
 import { Locations as LocationsPage } from './pages/Locations';
 import { PaymentMethods as PaymentMethodsPage } from './pages/PaymentMethods';
 import { Transfers as TransfersPage } from './pages/Transfers';
-import Analytics from './pages/Analytics';
 import { AuditLogPage } from './pages/AuditLog';
 import AnalyticsPage from './pages/Analytics';
 import { KycPage } from './pages/Kyc';
@@ -18,6 +18,17 @@ import { ReferralsPage } from './pages/Referrals';
 
 function AdminRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
+  const allowedAdminHosts = new Set(['admin.odineco.pro', 'localhost', '127.0.0.1']);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const currentHost = window.location.hostname;
+    if (!allowedAdminHosts.has(currentHost)) {
+      window.location.replace(`https://admin.odineco.pro${window.location.pathname}${window.location.search}`);
+    }
+  }, []);
 
   if (isLoading) {
     return null;
@@ -97,15 +108,15 @@ function AdminRoutes() {
         path="/analytics"
         element={
           <AdminLayout>
-            <Analytics />
+            <AnalyticsPage />
+          </AdminLayout>
+        }
+      />
+      <Route
         path="/audit"
         element={
           <AdminLayout>
             <AuditLogPage />
-        path="/analytics"
-        element={
-          <AdminLayout>
-            <AnalyticsPage />
           </AdminLayout>
         }
       />
