@@ -515,6 +515,14 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                         }}
                       />
                     </div>
+                <button
+                  onClick={handleSwap}
+                  disabled={isSwapping}
+                  className={cn(
+                    'w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-200',
+                    isSwapping
+                      ? 'bg-slate-600 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/25'
                   )}
 
                   {promoDiscount > 0 && (
