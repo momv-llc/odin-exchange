@@ -356,172 +356,150 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
               </div>
             )}
 
-            <div id="exchange" className="max-w-2xl mx-auto mb-12">
-              <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl">
-                <div className="mb-6">
-                  <label className="block text-slate-400 text-sm mb-2">{t('youSend')}</label>
-                  <div className="bg-slate-700/50 rounded-2xl p-4 border border-slate-600/50">
-                    <div className="flex items-center space-x-4">
-                      <button
-                        onClick={() => setShowFromCurrencySelector(true)}
-                        className="flex items-center space-x-3 bg-slate-600/50 rounded-xl px-4 py-3 hover:bg-slate-600 transition-colors group"
-                      >
-                        <span className="text-2xl">{selectedFrom.icon}</span>
-                        <div className="text-left">
-                          <div className="font-semibold">{selectedFrom.symbol}</div>
-                          <div className="text-xs text-slate-400">{selectedFrom.name}</div>
-                        </div>
-                        <svg
-                          className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+            <div className="grid lg:grid-cols-2 gap-8 items-start mb-12">
+              <div id="exchange" className="w-full">
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl">
+                  <div className="mb-6">
+                    <label className="block text-slate-400 text-sm mb-2">{t('youSend')}</label>
+                    <div className="bg-slate-700/50 rounded-2xl p-4 border border-slate-600/50">
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={() => setShowFromCurrencySelector(true)}
+                          className="flex items-center space-x-3 bg-slate-600/50 rounded-xl px-4 py-3 hover:bg-slate-600 transition-colors group"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                      <input
-                        type="number"
-                        value={amountFrom}
-                        onChange={(e) => setAmountFrom(e.target.value)}
-                        placeholder="0.00"
-                        className="flex-1 bg-transparent text-right text-2xl font-semibold outline-none placeholder-slate-500"
-                      />
-                    </div>
-                    <div className="mt-2 text-right text-sm text-slate-400">
-                      ${(parseFloat(amountFrom || '0') * selectedFrom.price).toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-center -my-4 relative z-10">
-                  <button
-                    onClick={switchCurrencies}
-                    className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-emerald-500/25"
-                  >
-                    <svg
-                      className="w-6 h-6 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="mb-8 mt-4">
-                  <label className="block text-slate-400 text-sm mb-2">{t('youReceive')}</label>
-                  <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
-                    <div className="flex items-center space-x-4">
-                      <button
-                        onClick={() => setShowToCurrencySelector(true)}
-                        className="flex items-center space-x-3 bg-slate-600/30 rounded-xl px-4 py-3 hover:bg-slate-600/50 transition-colors group"
-                      >
-                        <span className="text-2xl">{selectedTo.icon}</span>
-                        <div className="text-left">
-                          <div className="font-semibold">{selectedTo.symbol}</div>
-                          <div className="text-xs text-slate-400">{selectedTo.name}</div>
-                        </div>
-                        <svg
-                          className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                      <input
-                        type="text"
-                        value={amountTo}
-                        readOnly
-                        placeholder="0.00"
-                        className="flex-1 bg-transparent text-right text-2xl font-semibold outline-none placeholder-slate-500 text-emerald-400"
-                      />
-                    </div>
-                    <div className="mt-2 text-right text-sm text-slate-400">
-                      ${(parseFloat(amountTo || '0') * selectedTo.price).toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Location Selector */}
-                <div className="mb-4">
-                  <label className="block text-slate-400 text-sm mb-2">Location</label>
-                  <button
-                    onClick={() => setShowLocationSelector(true)}
-                    className="w-full flex items-center justify-between bg-slate-700/30 rounded-xl px-4 py-3 border border-slate-600/30 hover:border-emerald-500/50 transition-colors group"
-                  >
-                    <div className="flex items-center space-x-3">
-                      {selectedLocation ? (
-                        <>
-                          <span className="text-xl">{selectedLocation.flag}</span>
+                          <span className="text-2xl">{selectedFrom.icon}</span>
                           <div className="text-left">
-                            <div className="font-medium text-white">{selectedLocation.city}</div>
-                            <div className="text-xs text-slate-400">{selectedLocation.country}</div>
+                            <div className="font-semibold">{selectedFrom.symbol}</div>
+                            <div className="text-xs text-slate-400">{selectedFrom.name}</div>
                           </div>
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <svg
+                            className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
                           </svg>
-                          <span className="text-slate-400">Select pickup location</span>
-                        </>
-                      )}
+                        </button>
+                        <input
+                          type="number"
+                          value={amountFrom}
+                          onChange={(e) => setAmountFrom(e.target.value)}
+                          placeholder="0.00"
+                          className="flex-1 bg-transparent text-right text-2xl font-semibold outline-none placeholder-slate-500"
+                        />
+                      </div>
+                      <div className="mt-2 text-right text-sm text-slate-400">
+                        ${(parseFloat(amountFrom || '0') * selectedFrom.price).toFixed(2)}
+                      </div>
                     </div>
-                    <svg className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                </div>
+                  </div>
 
-                <div className="flex items-center justify-between text-sm text-slate-400 mb-4">
-                  <span>{t('exchangeRate')}</span>
-                  <span>
-                    1 {selectedFrom.symbol} = {(selectedFrom.price / selectedTo.price).toFixed(6)} {selectedTo.symbol}
-                  </span>
-                </div>
+                  <div className="flex justify-center -my-4 relative z-10">
+                    <button
+                      onClick={switchCurrencies}
+                      className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-emerald-500/25"
+                    >
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                        />
+                      </svg>
+                    </button>
+                  </div>
 
-                {PromoCodeInput && (
+                  <div className="mb-8 mt-4">
+                    <label className="block text-slate-400 text-sm mb-2">{t('youReceive')}</label>
+                    <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={() => setShowToCurrencySelector(true)}
+                          className="flex items-center space-x-3 bg-slate-600/30 rounded-xl px-4 py-3 hover:bg-slate-600/50 transition-colors group"
+                        >
+                          <span className="text-2xl">{selectedTo.icon}</span>
+                          <div className="text-left">
+                            <div className="font-semibold">{selectedTo.symbol}</div>
+                            <div className="text-xs text-slate-400">{selectedTo.name}</div>
+                          </div>
+                          <svg
+                            className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+                        <input
+                          type="text"
+                          value={amountTo}
+                          readOnly
+                          placeholder="0.00"
+                          className="flex-1 bg-transparent text-right text-2xl font-semibold outline-none placeholder-slate-500 text-emerald-400"
+                        />
+                      </div>
+                      <div className="mt-2 text-right text-sm text-slate-400">
+                        ${(parseFloat(amountTo || '0') * selectedTo.price).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Location Selector */}
                   <div className="mb-4">
-                    <PromoCodeInput
-                      amount={parseFloat(amountFrom) * selectedFrom.price || 0}
-                      onApply={(discount, code) => {
-                        setPromoDiscount(discount);
-                        setPromoCode(code);
-                      }}
-                      onClear={() => {
-                        setPromoDiscount(0);
-                        setPromoCode('');
-                      }}
-                    />
+                    <label className="block text-slate-400 text-sm mb-2">Location</label>
+                    <button
+                      onClick={() => setShowLocationSelector(true)}
+                      className="w-full flex items-center justify-between bg-slate-700/30 rounded-xl px-4 py-3 border border-slate-600/30 hover:border-emerald-500/50 transition-colors group"
+                    >
+                      <div className="flex items-center space-x-3">
+                        {selectedLocation ? (
+                          <>
+                            <span className="text-xl">{selectedLocation.flag}</span>
+                            <div className="text-left">
+                              <div className="font-medium text-white">{selectedLocation.city}</div>
+                              <div className="text-xs text-slate-400">{selectedLocation.country}</div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span className="text-slate-400">Select pickup location</span>
+                          </>
+                        )}
+                      </div>
+                      <svg className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
                   </div>
-                )}
 
-                {promoDiscount > 0 && (
-                  <div className="flex items-center justify-between text-sm mb-4 p-3 bg-emerald-500/10 rounded-lg">
-                    <span className="text-slate-300">Discount ({promoCode})</span>
-                    <span className="text-emerald-400 font-medium">-${promoDiscount.toFixed(2)}</span>
+                  <div className="flex items-center justify-between text-sm text-slate-400 mb-4">
+                    <span>{t('exchangeRate')}</span>
+                    <span>
+                      1 {selectedFrom.symbol} = {(selectedFrom.price / selectedTo.price).toFixed(6)} {selectedTo.symbol}
+                    </span>
                   </div>
-                )}
 
                 <button
                   onClick={handleSwap}
@@ -532,84 +510,102 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                       ? 'bg-slate-600 cursor-not-allowed'
                       : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/25'
                   )}
-                >
-                  {isSwapping ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>{t('processing')}</span>
+
+                  {promoDiscount > 0 && (
+                    <div className="flex items-center justify-between text-sm mb-4 p-3 bg-emerald-500/10 rounded-lg">
+                      <span className="text-slate-300">Discount ({promoCode})</span>
+                      <span className="text-emerald-400 font-medium">-${promoDiscount.toFixed(2)}</span>
                     </div>
-                  ) : (
-                    t('exchangeNow')
                   )}
-                </button>
+
+                  <button
+                    onClick={handleSwap}
+                    disabled={isSwapping}
+                    className={cn(
+                      'w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-200',
+                      isSwapping
+                        ? 'bg-slate-600 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/25'
+                    )}
+                  >
+                    {isSwapping ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>{t('processing')}</span>
+                      </div>
+                    ) : (
+                      t('exchangeNow')
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div id="markets" className="mb-12">
-              <h2 className="text-2xl font-bold mb-6 flex items-center">
-                <span className="w-1 h-6 bg-gradient-to-b from-emerald-400 to-cyan-400 rounded-full mr-3"></span>
-                {t('liveMarkets')}
-              </h2>
+              <div id="markets" className="w-full">
+                <h2 className="text-2xl font-bold mb-6 flex items-center">
+                  <span className="w-1 h-6 bg-gradient-to-b from-emerald-400 to-cyan-400 rounded-full mr-3"></span>
+                  {t('liveMarkets')}
+                </h2>
 
-              <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-slate-700/30">
-                      <tr>
-                        <th className="text-left py-4 px-6 text-slate-400 font-medium">{t('asset')}</th>
-                        <th className="text-right py-4 px-6 text-slate-400 font-medium">{t('price')}</th>
-                        <th className="text-right py-4 px-6 text-slate-400 font-medium">{t('change24h')}</th>
-                        <th className="text-right py-4 px-6 text-slate-400 font-medium">{t('action')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-700/50">
-                      {currencies.map((currency) => (
-                        <tr
-                          key={currency.symbol}
-                          className="hover:bg-slate-700/30 transition-colors group"
-                        >
-                          <td className="py-4 px-6">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-lg">
-                                {currency.icon}
-                              </div>
-                              <div>
-                                <div className="font-semibold">{currency.symbol}</div>
-                                <div className="text-sm text-slate-400">{currency.name}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6 text-right font-mono">
-                            ${currency.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-4 px-6 text-right">
-                            <span
-                              className={cn(
-                                'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',
-                                currency.change >= 0
-                                  ? 'bg-emerald-500/10 text-emerald-400'
-                                  : 'bg-red-500/10 text-red-400'
-                              )}
-                            >
-                              {currency.change >= 0 ? '+' : ''}
-                              {currency.change.toFixed(2)}%
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 text-right">
-                            <button
-                              onClick={() => {
-                                setSelectedTo(currency);
-                                document.getElementById('exchange')?.scrollIntoView({ behavior: 'smooth' });
-                              }}
-                              className="px-4 py-2 bg-slate-700/50 rounded-lg text-sm font-medium hover:bg-emerald-500/20 hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              {t('trade')}
-                            </button>
-                          </td>
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-700/30">
+                        <tr>
+                          <th className="text-left py-4 px-6 text-slate-400 font-medium">{t('asset')}</th>
+                          <th className="text-right py-4 px-6 text-slate-400 font-medium">{t('price')}</th>
+                          <th className="text-right py-4 px-6 text-slate-400 font-medium">{t('change24h')}</th>
+                          <th className="text-right py-4 px-6 text-slate-400 font-medium">{t('action')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700/50">
+                        {currencies.map((currency) => (
+                          <tr
+                            key={currency.symbol}
+                            className="hover:bg-slate-700/30 transition-colors group"
+                          >
+                            <td className="py-4 px-6">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-lg">
+                                  {currency.icon}
+                                </div>
+                                <div>
+                                  <div className="font-semibold">{currency.symbol}</div>
+                                  <div className="text-sm text-slate-400">{currency.name}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6 text-right font-mono">
+                              ${currency.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <span
+                                className={cn(
+                                  'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',
+                                  currency.change >= 0
+                                    ? 'bg-emerald-500/10 text-emerald-400'
+                                    : 'bg-red-500/10 text-red-400'
+                                )}
+                              >
+                                {currency.change >= 0 ? '+' : ''}
+                                {currency.change.toFixed(2)}%
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <button
+                                onClick={() => {
+                                  setSelectedTo(currency);
+                                  document.getElementById('exchange')?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                className="px-4 py-2 bg-slate-700/50 rounded-lg text-sm font-medium hover:bg-emerald-500/20 hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100"
+                              >
+                                {t('trade')}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
