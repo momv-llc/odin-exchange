@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+const normalizeApiBase = (base: string) =>
+  base.replace('api.odineco.online', 'api.odineco.pro');
+const API_BASE = normalizeApiBase(import.meta.env.VITE_API_URL || '/api/v1');
 
 interface RequestOptions {
   method?: string;
@@ -62,19 +64,6 @@ class ApiService {
     }
 
     const response = await fetch(`${API_BASE}${endpoint}`, config);
-
-    if (response.status === 401) {
-      this.setToken(null);
-      window.location.href = '/admin/login';
-      throw new Error('Unauthorized');
-    }
-
-    const payload = await response.json();
-
-    if (!response.ok) {
-      throw new Error(getErrorMessage(payload));
-    }
-
 
     if (response.status === 401) {
       this.setToken(null);
