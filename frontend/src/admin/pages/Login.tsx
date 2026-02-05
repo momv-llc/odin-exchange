@@ -116,7 +116,7 @@ export function LoginPage() {
           </div>
         )}
 
-        <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-8">
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-8 max-h-[90vh] overflow-y-auto">
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
               {error}
