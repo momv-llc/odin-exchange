@@ -501,6 +501,20 @@ export function App({ AuthButtons, PromoCodeInput }: AppProps) {
                     </span>
                   </div>
 
+                  {PromoCodeInput && (
+                    <div className="mb-4">
+                      <PromoCodeInput
+                        amount={parseFloat(amountFrom) * selectedFrom.price || 0}
+                        onApply={(discount, code) => {
+                          setPromoDiscount(discount);
+                          setPromoCode(code);
+                        }}
+                        onClear={() => {
+                          setPromoDiscount(0);
+                          setPromoCode('');
+                        }}
+                      />
+                    </div>
                 <button
                   onClick={handleSwap}
                   disabled={isSwapping}
