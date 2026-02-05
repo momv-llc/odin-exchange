@@ -1,5 +1,8 @@
 // Use the real API base URL for auth/profile flows (with local fallback).
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+const API_BASE = (import.meta.env.VITE_API_URL || '/api/v1').replace(
+  'api.odineco.online',
+  'api.odineco.pro'
+);
 
 interface RequestOptions {
   method?: string;

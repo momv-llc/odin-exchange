@@ -16,12 +16,20 @@ async function bootstrap() {
 
   // === CORS (production-deterministic) ===
   const frontendUrl = config.get<string>('FRONTEND_URL');
-  if (!frontendUrl) {
-    throw new Error('FRONTEND_URL is not defined');
+  const adminFrontendUrl = config.get<string>('ADMIN_FRONTEND_URL');
+  const frontendUrlList = config.get<string>('FRONTEND_URLS');
+  const allowedOrigins = [
+    frontendUrl,
+    adminFrontendUrl,
+    ...(frontendUrlList ? frontendUrlList.split(',') : []),
+  ].map((value) => value?.trim()).filter(Boolean) as string[];
+
+  if (allowedOrigins.length === 0) {
+    throw new Error('FRONTEND_URL/ADMIN_FRONTEND_URL/FRONTEND_URLS is not defined');
   }
 
   app.enableCors({
-    origin: frontendUrl,
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -52,7 +60,7 @@ async function bootstrap() {
     .setDescription('API documentation for Odin Exchange')
     .setVersion('1.0')
     .addBearerAuth()
-    .addServer('https://api.odineco.online', 'Production')
+    .addServer('https://api.odineco.pro', 'Production')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -71,4 +79,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-
