@@ -1,239 +1,81 @@
-// Use the real API base URL for auth/profile flows (with local fallback).
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
-
-interface RequestOptions {
-  method?: string;
-  body?: any;
-  headers?: Record<string, string>;
-}
-
-interface ApiErrorPayload {
-  message?: string | string[];
-  error?: string;
-}
-
-const unwrap = <T>(payload: any): T => {
-  if (payload && typeof payload === 'object' && 'data' in payload) {
-    return payload.data as T;
-  }
-  return payload as T;
-};
-
-const getErrorMessage = (payload: ApiErrorPayload) => {
-  if (Array.isArray(payload?.message)) {
-    return payload.message.join(', ');
-  }
-  return payload?.message || payload?.error || 'Request failed';
-};
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 class UserApiService {
-  private accessToken: string | null = null;
-  private refreshToken: string | null = null;
+  private tokenKey = 'user_token';
 
-  constructor() {
-    this.accessToken = localStorage.getItem('user_access_token');
-    this.refreshToken = localStorage.getItem('user_refresh_token');
+  private get token() {
+    return localStorage.getItem(this.tokenKey);
   }
 
-  setTokens(access: string | null, refresh: string | null) {
-    this.accessToken = access;
-    this.refreshToken = refresh;
-    if (access) {
-      localStorage.setItem('user_access_token', access);
-    } else {
-      localStorage.removeItem('user_access_token');
-    }
-    if (refresh) {
-      localStorage.setItem('user_refresh_token', refresh);
-    } else {
-      localStorage.removeItem('user_refresh_token');
-    }
+  private set token(value: string | null) {
+    if (value) localStorage.setItem(this.tokenKey, value);
+    else localStorage.removeItem(this.tokenKey);
   }
 
-  getAccessToken(): string | null {
-    return this.accessToken;
-  }
-
-  isLoggedIn(): boolean {
-    return !!this.accessToken;
-  }
-
-  async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { method = 'GET', body, headers = {} } = options;
-
-    const config: RequestInit = {
-      method,
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...(this.accessToken && { Authorization: `Bearer ${this.accessToken}` }),
-        ...headers,
+        ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+        ...(options.headers || {}),
       },
-    };
-
-    if (body) {
-      config.body = JSON.stringify(body);
-    }
-
-    let response = await fetch(`${API_BASE}${endpoint}`, config);
-
-    if (response.status === 401 && this.refreshToken) {
-      const refreshed = await this.refreshTokens();
-      if (refreshed) {
-        config.headers = {
-          ...config.headers as Record<string, string>,
-          Authorization: `Bearer ${this.accessToken}`,
-        };
-        response = await fetch(`${API_BASE}${endpoint}`, config);
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
-      }
-
-      return data;
-    } catch (error: any) {
-      throw error;
-    }
-    }
-
-    if (response.status === 401) {
-      this.setTokens(null, null);
-      window.dispatchEvent(new Event('user-logout'));
-      throw new Error('Unauthorized');
-    }
-
-    const payload = await response.json();
+      body: options.body && typeof options.body !== 'string' ? JSON.stringify(options.body) : options.body,
+    });
 
     if (!response.ok) {
-      throw new Error(getErrorMessage(payload));
+      const text = await response.text();
+      throw new Error(text || `Request failed (${response.status})`);
     }
 
-    return unwrap<T>(payload);
+    if (response.status === 204) return {} as T;
+    return response.json();
   }
 
-  async refreshTokens(): Promise<boolean> {
-    if (!this.refreshToken) return false;
-
-    try {
-      const response = await fetch(`${API_BASE}/user/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: this.refreshToken }),
-      });
-
-      const payload = await response.json();
-
-      if (!response.ok) {
-        this.setTokens(null, null);
-        return false;
-      }
-
-      const data = unwrap<{ accessToken: string; refreshToken: string }>(payload);
-      this.setTokens(data.accessToken, data.refreshToken);
-      return true;
-    } catch {
-      this.setTokens(null, null);
-      return false;
-    }
-  }
-
-  // Auth endpoints
-  async register(data: { email: string; password: string; firstName?: string; lastName?: string; phone?: string }) {
-    return this.request<any>('/user/auth/register', {
-      method: 'POST',
-      body: data,
-    });
+  isLoggedIn() {
+    return !!this.token;
   }
 
   async login(email: string, password: string) {
-    const result = await this.request<any>('/user/auth/login', {
-      method: 'POST',
-      body: { email, password },
-    });
-    this.setTokens(result.accessToken, result.refreshToken);
+    const result = await this.request<{ accessToken: string; user: any }>('/auth/login', { method: 'POST', body: { email, password } as any });
+    this.token = result.accessToken;
     return result;
   }
 
+  async register(data: { email: string; password: string; firstName?: string; lastName?: string }) {
+    return this.request('/auth/register', { method: 'POST', body: data as any });
+  }
+
   async logout() {
-    if (this.refreshToken) {
-      try {
-        await this.request('/user/auth/logout', {
-          method: 'POST',
-          body: { refreshToken: this.refreshToken },
-        });
-      } catch {
-        // Ignore logout errors
-      }
-    }
-    this.setTokens(null, null);
-  }
-
-  async verifyEmail(token: string) {
-    return this.request<any>('/user/auth/verify-email', {
-      method: 'POST',
-      body: { token },
-    });
-  }
-
-  async forgotPassword(email: string) {
-    return this.request<any>('/user/auth/forgot-password', {
-      method: 'POST',
-      body: { email },
-    });
-  }
-
-  async resetPassword(token: string, password: string) {
-    return this.request<any>('/user/auth/reset-password', {
-      method: 'POST',
-      body: { token, password },
-    });
+    this.token = null;
   }
 
   async getProfile() {
-    return this.request<any>('/user/auth/me');
+    return this.request<any>('/auth/profile');
   }
 
-  async updateProfile(data: { firstName?: string; lastName?: string; phone?: string; preferredLang?: string }) {
-    const result = await this.request<any>('/user/auth/me', {
-      method: 'PUT',
-      body: data,
-    });
-    return result.user ?? result;
+  async updateProfile(data: any) {
+    return this.request<any>('/auth/profile', { method: 'PUT', body: data as any });
   }
 
   async changePassword(currentPassword: string, newPassword: string) {
-    return this.request<any>('/user/auth/change-password', {
-      method: 'POST',
-      body: { currentPassword, newPassword },
-    });
+    return this.request('/auth/change-password', { method: 'POST', body: { currentPassword, newPassword } as any });
+  }
+
+  async forgotPassword(email: string) {
+    return this.request('/auth/forgot-password', { method: 'POST', body: { email } as any });
   }
 
   async getSessions() {
-    return this.request<any[]>('/user/auth/sessions');
+    return this.request<any[]>('/auth/sessions');
   }
 
   async revokeSession(sessionId: string) {
-    return this.request<any>(`/user/auth/sessions/${sessionId}`, {
-      method: 'DELETE',
-    });
+    return this.request(`/auth/sessions/${sessionId}`, { method: 'DELETE' });
   }
 
-  // Promo
   async validatePromo(code: string, amount: number) {
-    return this.request<any>('/promo/validate', {
-      method: 'POST',
-      body: { code, amount },
-    });
-  }
-
-  // Reviews
-  async submitReview(data: { rating: number; title?: string; content: string; orderId?: string }) {
-    return this.request<any>('/reviews/user', {
-      method: 'POST',
-      body: { ...data, authorName: 'User' },
-    });
+    return this.request<{ isValid: boolean; discount: number; message?: string }>('/promo/validate', { method: 'POST', body: { code, amount } as any });
   }
 }
 

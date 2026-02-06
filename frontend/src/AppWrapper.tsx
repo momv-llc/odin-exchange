@@ -1,31 +1,14 @@
-import { ReactNode, useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { UserAuthProvider, useUserAuth, AuthModal, ProfileModal } from './auth';
-import { ABTestingProvider, useABTesting, ABAnalytics } from './abTesting';
-import { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { UserAuthProvider } from './auth';
-import { ABTestingProvider, useABTesting, ABAnalytics } from './abTesting';
-import { Language } from './translations';
+import { useEffect, useState, type ComponentType } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { ABAnalytics, ABTestingProvider, useABTesting } from './abTesting';
+import { ABTestingDashboard } from './abTesting/ABTestingDashboard';
+import { AuthModal, ProfileModal, UserAuthProvider, useUserAuth } from './auth';
 import { Home } from './pages/Home';
 import { Reviews } from './pages/Reviews';
 import { TrackRequest } from './pages/TrackRequest';
 import { KycVerification } from './pages/KycVerification';
 import { ReferralProgram } from './pages/ReferralProgram';
 import { Account } from './pages/Account';
-import { Footer } from './components/Footer';
-import { Navbar } from './components/Navbar';
-import { Language } from './translations';
-
-function AuthButtons({ onAuthSuccess }: { onAuthSuccess: () => void }) {
-  const { user, isAuthenticated, isLoading } = useUserAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-
-  if (isLoading) {
-    return <div className="w-20 h-10 bg-slate-700/50 rounded-lg animate-pulse" />;
-  }
 import { AuthPage } from './pages/AuthPage';
 import { AccountPage } from './pages/AccountPage';
 import { Integrations } from './pages/Integrations';
@@ -37,15 +20,35 @@ import { TermsOfService } from './pages/Legall/Legal_TermsOfService';
 import { PrivacyPolicy } from './pages/Legall/Legal_PrivacyPolicy';
 import { AMLPolicy } from './pages/Legall/Legal_AMLPolicy';
 import { ExchangeRules } from './pages/Legall/Legal_ExchangeRules';
+import type { Language } from './translations';
 
-function AppRoutes() {
-  const location = useLocation();
-  const { experiments } = useABTesting();
-  const [currentLang, setCurrentLang] = useState<Language>('en');
+interface AuthButtonsProps {
+  onAuthSuccess: () => void;
+}
 
-  useEffect(() => {
-    ABAnalytics.trackPageView(location.pathname, experiments);
-  }, [location.pathname, experiments]);
+function AuthButtons({ onAuthSuccess }: AuthButtonsProps) {
+  const { user, isAuthenticated, isLoading } = useUserAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+
+  if (isLoading) {
+    return <div className="w-20 h-10 bg-slate-700/50 rounded-lg animate-pulse" />;
+  }
+
+  if (isAuthenticated && user) {
+    return (
+      <>
+        <button
+          onClick={() => setShowProfileModal(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-slate-700/50 rounded-lg hover:bg-slate-600/50 transition-colors"
+        >
+          <span className="text-sm text-white">{user.firstName || user.email.split('@')[0]}</span>
+        </button>
+        <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -79,28 +82,16 @@ function AppRoutes() {
   );
 }
 
-function AppWithAuth() {
-  const { experiments } = useABTesting();
-
-  // Track page view with A/B experiment context
-  useEffect(() => {
-    ABAnalytics.trackPageView('main', experiments);
-  }, [experiments]);
-
-  const [currentLang, setCurrentLang] = useState<Language>('en');
-  const navigate = useNavigate();
+function AppRoutes() {
   const location = useLocation();
+  const { experiments } = useABTesting();
+  const [currentLang, setCurrentLang] = useState<Language>('en');
 
-  const handleAuthSuccess = () => {
-    const state = location.state as { from?: string } | null;
-    if (state?.from) {
-      navigate(state.from, { replace: true });
-      return;
-    }
-    navigate('/account');
-  };
+  useEffect(() => {
+    ABAnalytics.trackPageView(location.pathname, experiments);
+  }, [location.pathname, experiments]);
 
-  const AuthButtonsComponent = () => <AuthButtons onAuthSuccess={handleAuthSuccess} />;
+  const AuthButtonsComponent: ComponentType = () => <AuthButtons onAuthSuccess={() => undefined} />;
 
   const pageProps = {
     currentLang,
@@ -108,103 +99,21 @@ function AppWithAuth() {
     AuthButtons: AuthButtonsComponent,
   };
 
-  const PageFrame = ({ children }: { children: ReactNode }) => (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <Navbar currentLang={currentLang} setCurrentLang={setCurrentLang} AuthButtons={AuthButtonsComponent} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">{children}</main>
-      <Footer />
-    </div>
-  );
-
-  const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-    const { isAuthenticated, isLoading } = useUserAuth();
-
-    if (isLoading) {
-      return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-          <div className="w-10 h-10 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-        </div>
-      );
-    }
-
-    if (!isAuthenticated) {
-      return <Navigate to="/" replace state={{ from: location.pathname }} />;
-    }
-
-    return <>{children}</>;
-  };
-
   return (
     <Routes>
       <Route path="/" element={<Home {...pageProps} />} />
+      <Route path="/exchange" element={<Navigate to="/" replace />} />
       <Route path="/reviews" element={<Reviews {...pageProps} />} />
       <Route path="/track" element={<TrackRequest {...pageProps} />} />
-      <Route
-        path="/kyc"
-        element={
-          <PageFrame>
-            <KycVerification />
-          </PageFrame>
-        }
-      />
-      <Route
-        path="/referrals"
-        element={
-          <PageFrame>
-            <ReferralProgram />
-          </PageFrame>
-        }
-      />
-      <Route
-        path="/account"
-        element={
-          <ProtectedRoute>
-            <PageFrame>
-              <Account />
-            </PageFrame>
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
-}
-
-// Handler for A/B conversion events - can be connected to analytics service
-const handleABConversion = (
-  experimentId: string,
-  variant: string,
-  eventName: string,
-  metadata?: Record<string, unknown>
-) => {
-  // In production, send to analytics service (GA, Mixpanel, Amplitude, etc.)
-  console.log('[Analytics] A/B Conversion:', { experimentId, variant, eventName, metadata });
-
-  // Example: Send to backend API
-  // fetch('/api/analytics/ab-conversion', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ experimentId, variant, eventName, metadata, timestamp: new Date() })
-  // });
-};
-
-    <Routes>
-      <Route path="/" element={<Home currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
-      <Route path="/exchange" element={<Navigate to="/" replace />} />
-      <Route path="/reviews" element={<Reviews currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
-      <Route path="/track" element={<TrackRequest currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
-      <Route path="/track/:code" element={<TrackRequest currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
-      <Route path="/kyc" element={<KycVerification currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
-      <Route path="/referral" element={<ReferralProgram currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/track/:code" element={<TrackRequest {...pageProps} />} />
+      <Route path="/kyc" element={<KycVerification {...pageProps} />} />
+      <Route path="/referral" element={<ReferralProgram {...pageProps} />} />
+      <Route path="/referrals" element={<ReferralProgram {...pageProps} />} />
       <Route path="/affiliate" element={<Navigate to="/referral" replace />} />
       <Route path="/wallet" element={<Navigate to="/account" replace />} />
       <Route path="/terms" element={<TermsOfService currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/privacy" element={<PrivacyPolicy currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/aml" element={<AMLPolicy currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
-      <Route path="/risk" element={<ExchangeRules currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
-      <Route path="/login" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="login" />} />
-      <Route path="/register" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="register" />} />
-      <Route path="/account" element={<AccountPage currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/exchange-rules" element={<ExchangeRules currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/risk" element={<Navigate to="/exchange-rules" replace />} />
       <Route path="/login" element={<AuthPage currentLang={currentLang} setCurrentLang={setCurrentLang} mode="login" />} />
@@ -215,6 +124,8 @@ const handleABConversion = (
       <Route path="/analytics" element={<AnalyticsInfo currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/exchange-rates" element={<ExchangeRatesInfo currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/push-notifications" element={<PushNotificationsPage currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/ab-testing" element={<ABTestingDashboard />} />
+      <Route path="/account-settings" element={<Account />} />
       <Route path="/markets" element={<Navigate to="/" replace />} />
       <Route path="/api" element={<Navigate to="/" replace />} />
       <Route path="/business" element={<Navigate to="/" replace />} />
@@ -222,9 +133,9 @@ const handleABConversion = (
       <Route path="/fees" element={<Navigate to="/" replace />} />
       <Route path="/api-docs" element={<Navigate to="/" replace />} />
       <Route path="/contact" element={<Navigate to="/" replace />} />
-      <Route path="/compliance" element={<Navigate to="/" replace />} />
-      <Route path="/licenses" element={<Navigate to="/" replace />} />
-      <Route path="/certificates" element={<Navigate to="/" replace />} />
+      <Route path="/compliance" element={<Navigate to="/aml" replace />} />
+      <Route path="/licenses" element={<Navigate to="/terms" replace />} />
+      <Route path="/certificates" element={<Navigate to="/privacy" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
