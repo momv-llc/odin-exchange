@@ -80,6 +80,26 @@ class ApiService {
     return unwrap<T>(payload);
   }
 
+
+  async get<T = any>(endpoint: string) {
+    return this.request<T>(endpoint);
+  }
+
+  async post<T = any>(endpoint: string, body?: unknown) {
+    return this.request<T>(endpoint, { method: 'POST', body });
+  }
+
+  async put<T = any>(endpoint: string, body?: unknown) {
+    return this.request<T>(endpoint, { method: 'PUT', body });
+  }
+
+  async patch<T = any>(endpoint: string, body?: unknown) {
+    return this.request<T>(endpoint, { method: 'PATCH', body });
+  }
+
+  async delete<T = any>(endpoint: string) {
+    return this.request<T>(endpoint, { method: 'DELETE' });
+  }
   async login(email: string, password: string) {
     return this.request<any>('/admin/auth/login', {
       method: 'POST',

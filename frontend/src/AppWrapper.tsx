@@ -22,6 +22,7 @@ import { ExchangeRules } from './pages/Legall/Legal_ExchangeRules';
 
 function ProtectedAccountRoute({ currentLang, setCurrentLang }: { currentLang: Language; setCurrentLang: (lang: Language) => void }) {
   const { isAuthenticated, isLoading } = useUserAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -32,7 +33,7 @@ function ProtectedAccountRoute({ currentLang, setCurrentLang }: { currentLang: L
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
   return <AccountPage currentLang={currentLang} setCurrentLang={setCurrentLang} />;
@@ -56,6 +57,7 @@ function AppRoutes() {
       <Route path="/track/:code" element={<TrackRequest currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/kyc" element={<KycVerification currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
       <Route path="/referral" element={<ReferralProgram currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
+      <Route path="/referrals" element={<Navigate to="/referral" replace />} />
       <Route path="/affiliate" element={<Navigate to="/referral" replace />} />
       <Route path="/wallet" element={<Navigate to="/account" replace />} />
       <Route path="/terms" element={<TermsOfService currentLang={currentLang} setCurrentLang={setCurrentLang} />} />
@@ -98,3 +100,6 @@ export function AppWrapper() {
     </ABTestingProvider>
   );
 }
+
+
+export default AppWrapper;
