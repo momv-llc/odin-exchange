@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react';
-import { adminApi } from '../services/api';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { api } from '../services/api';
 
 interface Referral {
   id: string;
   code: string;
   status: string;
   rewardPaid: boolean;
-  referrerReward?: string | number | null;
-  referredBonus?: string | number | null;
-  conversionDate?: string | null;
   createdAt: string;
   referrer: { email: string };
   referred: { email: string };
@@ -24,41 +21,41 @@ interface ReferralStats {
 }
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-500/10 text-yellow-400',
-  converted: 'bg-emerald-500/10 text-emerald-400',
+  pending: 'text-yellow-400',
+  converted: 'text-emerald-400',
 };
 
 export function ReferralsPage() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [stats, setStats] = useState<ReferralStats | null>(null);
-  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [status, setStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ total: 0, limit: 20 });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadReferrals();
-    loadStats();
-  }, [meta.page, status]);
+    void loadStats();
+  }, []);
+
+  useEffect(() => {
+    void loadReferrals();
+  }, [page, status]);
+
+  const loadStats = async () => {
+    try {
+      const result = await api.getReferralStats();
+      setStats(result);
+    } catch (error) {
+      console.error('Failed to load referral stats:', error);
+    }
+  };
 
   const loadReferrals = async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (status) params.append('status', status);
-      params.append('page', meta.page.toString());
-      params.append('limit', meta.limit.toString());
-
-      const data = await adminApi.get(`/admin/referrals?${params.toString()}`);
-      setReferrals(data.referrals || []);
-      const limit = data.limit || meta.limit;
-      const total = data.total || 0;
-      setMeta(prev => ({
-        ...prev,
-        page: data.page || prev.page,
-        limit,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / limit)),
-      }));
+      const result = await api.getReferrals({ page, limit: meta.limit, status });
+      setReferrals(result.referrals || []);
+      setMeta({ total: result.total || 0, limit: result.limit || meta.limit });
     } catch (error) {
       console.error('Failed to load referrals:', error);
     } finally {
@@ -70,154 +67,98 @@ export function ReferralsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Referrals</h1>
-      </div>
+      <h1 className="text-2xl font-bold text-white">Referrals</h1>
 
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="bg-slate-800 rounded-xl p-4">
-            <div className="text-slate-400 text-sm">Total Referrals</div>
-            <div className="text-2xl font-bold text-white">{stats.totalReferrals}</div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {[
+          ['Total', stats?.totalReferrals ?? 0, 'text-white'],
+          ['Converted', stats?.convertedReferrals ?? 0, 'text-emerald-400'],
+          ['Conversion', `${stats?.conversionRate ?? 0}%`, 'text-blue-400'],
+          ['Pending rewards', Number(stats?.totalRewardsPending ?? 0).toLocaleString(), 'text-yellow-400'],
+          ['Paid rewards', Number(stats?.totalRewardsPaid ?? 0).toLocaleString(), 'text-emerald-400'],
+        ].map(([label, value, color]) => (
+          <div key={label as string} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+            <div className="text-xs text-slate-400">{label}</div>
+            <div className={`text-2xl font-semibold ${color}`}>{value as string | number}</div>
           </div>
-          <div className="bg-slate-800 rounded-xl p-4">
-            <div className="text-slate-400 text-sm">Converted</div>
-            <div className="text-2xl font-bold text-emerald-400">{stats.convertedReferrals}</div>
-          </div>
-          <div className="bg-slate-800 rounded-xl p-4">
-            <div className="text-slate-400 text-sm">Conversion Rate</div>
-            <div className="text-2xl font-bold text-white">{stats.conversionRate}%</div>
-          </div>
-          <div className="bg-slate-800 rounded-xl p-4">
-            <div className="text-slate-400 text-sm">Pending Rewards</div>
-            <div className="text-2xl font-bold text-yellow-400">
-              {Number(stats.totalRewardsPending).toLocaleString()}
-            </div>
-          </div>
-          <div className="bg-slate-800 rounded-xl p-4">
-            <div className="text-slate-400 text-sm">Paid Rewards</div>
-            <div className="text-2xl font-bold text-emerald-400">
-              {Number(stats.totalRewardsPaid).toLocaleString()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col md:flex-row gap-4">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-          <div className="text-sm text-slate-400">Всего рефералов</div>
-          <div className="text-2xl font-semibold text-white">{stats?.totalReferrals ?? 0}</div>
-        </div>
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-          <div className="text-sm text-slate-400">Конвертировано</div>
-          <div className="text-2xl font-semibold text-emerald-400">{stats?.convertedReferrals ?? 0}</div>
-        </div>
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-          <div className="text-sm text-slate-400">Конверсия</div>
-          <div className="text-2xl font-semibold text-blue-400">{stats?.conversionRate ?? 0}%</div>
-        </div>
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-          <div className="text-sm text-slate-400">Ожидают выплат</div>
-          <div className="text-2xl font-semibold text-yellow-400">
-            {Number(stats?.totalRewardsPending ?? 0).toLocaleString()}
-          </div>
-        </div>
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
-          <div className="text-sm text-slate-400">Выплачено</div>
-          <div className="text-2xl font-semibold text-emerald-400">
-            {Number(stats?.totalRewardsPaid ?? 0).toLocaleString()}
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-slate-400">Список рефералов</div>
         <select
           value={status}
           onChange={e => {
             setStatus(e.target.value);
             setPage(1);
           }}
-          className="bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-400"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
         >
-          <option value="">Все статусы</option>
+          <option value="">All statuses</option>
           <option value="pending">Pending</option>
           <option value="converted">Converted</option>
         </select>
+        <div className="text-sm text-slate-400">Total: {meta.total}</div>
       </div>
 
-      <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-700/30">
-                  <tr>
-                    <th className="text-left py-4 px-6 text-slate-400 font-medium">Referrer</th>
-                    <th className="text-left py-4 px-6 text-slate-400 font-medium">Referred</th>
-                    <th className="text-left py-4 px-6 text-slate-400 font-medium">Code</th>
-                    <th className="text-left py-4 px-6 text-slate-400 font-medium">Status</th>
-                    <th className="text-left py-4 px-6 text-slate-400 font-medium">Reward Paid</th>
-                    <th className="text-left py-4 px-6 text-slate-400 font-medium">Created</th>
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-900/40 text-slate-300">
+              <tr>
+                <th className="text-left px-4 py-3">Referrer</th>
+                <th className="text-left px-4 py-3">Referred</th>
+                <th className="text-left px-4 py-3">Code</th>
+                <th className="text-left px-4 py-3">Status</th>
+                <th className="text-left px-4 py-3">Reward paid</th>
+                <th className="text-left px-4 py-3">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-slate-400">
+                    <Loader2 className="inline w-5 h-5 animate-spin mr-2" /> Loading...
+                  </td>
+                </tr>
+              ) : referrals.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-slate-400">No referrals found</td>
+                </tr>
+              ) : (
+                referrals.map(ref => (
+                  <tr key={ref.id} className="border-t border-slate-700/40">
+                    <td className="px-4 py-3 text-white">{ref.referrer?.email}</td>
+                    <td className="px-4 py-3 text-white">{ref.referred?.email}</td>
+                    <td className="px-4 py-3 text-slate-300 font-mono">{ref.code}</td>
+                    <td className={`px-4 py-3 ${statusColors[ref.status] || 'text-slate-300'}`}>{ref.status}</td>
+                    <td className="px-4 py-3 text-slate-300">{ref.rewardPaid ? 'Yes' : 'No'}</td>
+                    <td className="px-4 py-3 text-slate-300">{new Date(ref.createdAt).toLocaleDateString()}</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-700/50">
-                  {referrals.map(referral => (
-                    <tr key={referral.id} className="hover:bg-slate-700/30 transition-colors">
-                      <td className="py-4 px-6 text-white">{referral.referrer?.email}</td>
-                      <td className="py-4 px-6 text-white">{referral.referred?.email}</td>
-                      <td className="py-4 px-6 text-slate-300 font-mono">{referral.code}</td>
-                      <td className="py-4 px-6">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[referral.status] || 'bg-slate-500/10 text-slate-400'}`}>
-                          {referral.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-slate-300">
-                        {referral.rewardPaid ? 'Yes' : 'No'}
-                      </td>
-                      <td className="py-4 px-6 text-slate-400">
-                        {new Date(referral.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-            {referrals.length === 0 && (
-              <div className="text-center py-12 text-slate-400">Нет данных для отображения</div>
-            )}
-
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between p-4 text-sm text-slate-400">
-                <span>
-                  Страница {page} из {totalPages}
-                </span>
-                <div className="space-x-2">
-                  <button
-                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1 rounded-md bg-slate-700/40 disabled:opacity-50"
-                  >
-                    Назад
-                  </button>
-                  <button
-                    onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={page === totalPages}
-                    className="px-3 py-1 rounded-md bg-slate-700/40 disabled:opacity-50"
-                  >
-                    Вперёд
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+      <div className="flex items-center justify-center gap-3">
+        <button
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page <= 1}
+          className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg disabled:opacity-50"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="text-sm text-slate-300">
+          {page} / {totalPages}
+        </span>
+        <button
+          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+          disabled={page >= totalPages}
+          className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg disabled:opacity-50"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
