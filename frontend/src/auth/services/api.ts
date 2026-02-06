@@ -80,22 +80,11 @@ class UserApiService {
       const refreshed = await this.refreshTokens();
       if (refreshed) {
         config.headers = {
-          ...config.headers as Record<string, string>,
+          ...(config.headers as Record<string, string>),
           Authorization: `Bearer ${this.accessToken}`,
         };
         response = await fetch(`${API_BASE}${endpoint}`, config);
       }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
-      }
-
-      return data;
-    } catch (error: any) {
-      throw error;
-    }
     }
 
     if (response.status === 401) {
