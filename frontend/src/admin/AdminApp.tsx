@@ -18,17 +18,18 @@ import { ReferralsPage } from './pages/Referrals';
 
 function AdminRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
-  const allowedAdminHosts = new Set(['admin.odineco.pro', 'localhost', '127.0.0.1']);
+  const adminHost = import.meta.env.VITE_ADMIN_HOST || '';
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (!adminHost || typeof window === 'undefined') {
       return;
     }
+
     const currentHost = window.location.hostname;
-    if (!allowedAdminHosts.has(currentHost)) {
-      window.location.replace(`https://admin.odineco.pro${window.location.pathname}${window.location.search}`);
+    if (currentHost !== adminHost) {
+      window.location.replace(`${window.location.protocol}//${adminHost}${window.location.pathname}${window.location.search}`);
     }
-  }, []);
+  }, [adminHost]);
 
   if (isLoading) {
     return null;
